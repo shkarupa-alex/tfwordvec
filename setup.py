@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from setuptools import setup, find_packages
 
-__VERSION__ = '1.0.0'
+__VERSION__ = '0.1.0'
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
@@ -20,25 +20,27 @@ setup(
     author_email='shkarupa.alex@gmail.com',
     license='MIT',
     packages=find_packages(),
+    python_requires='>=3.6.0',
     install_requires=[
-        # https://github.com/tensorflow/tensorflow/issues/7166
-        # 'tensorflow>=2.0.0',
-        'tfmiss>=0.4.0',
-        'nlpvocab>=1.1.5',
+        'tensorflow>=2.2.0',
+        'tensorflow-addons>=0.9.1',
+        'tfmiss>=0.6.0',
+        'nlpvocab>=1.2.0',
     ],
-    extras_require={
-        'tf_cpu': ['tensorflow>=2.0.0'],
-        'tf_gpu': ['tensorflow-gpu>=2.0.0'],
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            'tfwordvec-vocab=tfwordvec.vocab:main',
+            'tfwordvec-train=tfwordvec.train:main',
+        ],
     },
-    test_suite='nose.collector',
-    tests_require=['nose'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Intended Audience :: Education',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',

@@ -3,51 +3,526 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
 import os
-import unittest
+import tensorflow as tf
 from nlpvocab import Vocabulary
 from ..hparam import build_hparams
-from ..input import train_input_fn
+from ..input import train_dataset, vocab_dataset
 
 
-class TestTrainInput(unittest.TestCase):
+class TestTrainDataset(tf.test.TestCase):
     def setUp(self):
         self.data_dir = os.path.join(os.path.dirname(__file__), 'data')
-        self.wildcard = os.path.join(self.data_dir, '*.txg.gz')
-        self.params = build_hparams()
-
-    def testCharCbow(self):
-        char_vocab = Vocabulary.load(
+        self.char_vocab = Vocabulary.load(
             os.path.join(self.data_dir, 'char_vocab.tsv'),
-            format=Vocabulary.FORMAT_TSV_WITH_HEADERS
-        )
-        dataset = train_input_fn(self.wildcard, char_vocab, self.params)
+            format=Vocabulary.FORMAT_TSV_WITH_HEADERS)
+        self.word_vocab = Vocabulary.load(
+            os.path.join(self.data_dir, 'word_vocab.tsv'),
+            format=Vocabulary.FORMAT_TSV_WITH_HEADERS)
+
+    def test_char_skipgram_sm_lower(self):
+        h_params = build_hparams({
+            'input_unit': 'char',
+            'vect_model': 'skipgram',
+            'model_head': 'sm',
+            'batch_size': 8
+        })
+        dataset = train_dataset(self.data_dir, h_params, self.char_vocab)
+
+        for row in dataset.take(1):
+            self.assertLen(row, 2)
+            features, labels = row
+
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['filters', 'inputs'])
+
+            self.assertTrue(tf.is_tensor(features['filters']))
+            self.assertListEqual(features['filters'].shape.as_list(), [8])
+            self.assertEqual(features['filters'].dtype, tf.bool)
+
+            self.assertTrue(tf.is_tensor(features['inputs']))
+            self.assertListEqual(features['inputs'].shape.as_list(), [8])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertEqual(labels.dtype, tf.int64)
+
+    def test_char_cbow_ss_cased(self):
+        h_params = build_hparams({
+            'input_unit': 'char',
+            'vect_model': 'cbow',
+            'model_head': 'ss',
+            'lower_case': False,
+            'batch_size': 6
+        })
+        dataset = train_dataset(self.data_dir, h_params, self.char_vocab)
+
+        for features in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['filters', 'inputs', 'labels', 'lengths'])
+
+            self.assertTrue(tf.is_tensor(features['filters']))
+            self.assertListEqual(features['filters'].shape.as_list(), [8])
+            self.assertEqual(features['filters'].dtype, tf.bool)
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(features['labels']))
+            self.assertListEqual(features['labels'].shape.as_list(), [8])
+            self.assertEqual(features['labels'].dtype, tf.int64)
+
+            self.assertTrue(tf.is_tensor(features['lengths']))
+            self.assertListEqual(features['lengths'].shape.as_list(), [8])
+            self.assertEqual(features['lengths'].dtype, tf.int32)
+
+    def test_char_cbowpos_nce_cased(self):
+        h_params = build_hparams({
+            'input_unit': 'char',
+            'vect_model': 'cbowpos',
+            'model_head': 'nce',
+            'lower_case': False,
+            'batch_size': 10
+        })
+        dataset = train_dataset(self.data_dir, h_params, self.char_vocab)
+
+        for features in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['filters', 'inputs', 'labels', 'lengths', 'positions'])
+
+            self.assertTrue(tf.is_tensor(features['filters']))
+            self.assertListEqual(features['filters'].shape.as_list(), [8])
+            self.assertEqual(features['filters'].dtype, tf.bool)
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(features['labels']))
+            self.assertListEqual(features['labels'].shape.as_list(), [8])
+            self.assertEqual(features['labels'].dtype, tf.int64)
+
+            self.assertTrue(tf.is_tensor(features['lengths']))
+            self.assertListEqual(features['lengths'].shape.as_list(), [8])
+            self.assertEqual(features['lengths'].dtype, tf.int32)
+
+            self.assertIsInstance(features['positions'], tf.RaggedTensor)
+            self.assertListEqual(features['positions'].shape.as_list(), [8, None])
+            self.assertEqual(features['positions'].dtype, tf.int32)
+
+    def test_word_skipgram_asm_lower(self):
+        h_params = build_hparams({
+            'input_unit': 'word',
+            'vect_model': 'skipgram',
+            'model_head': 'asm',
+            'batch_size': 4
+        })
+        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+
+        for features in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['filters', 'inputs', 'labels'])
+
+            self.assertTrue(tf.is_tensor(features['filters']))
+            self.assertListEqual(features['filters'].shape.as_list(), [4])
+            self.assertEqual(features['filters'].dtype, tf.bool)
+
+            self.assertTrue(tf.is_tensor(features['inputs']))
+            self.assertListEqual(features['inputs'].shape.as_list(), [4])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(features['labels']))
+            self.assertListEqual(features['labels'].shape.as_list(), [4])
+            self.assertEqual(features['labels'].dtype, tf.int64)
+
+    def test_word_cbow_sm_cased_nubuck(self):
+        h_params = build_hparams({
+            'input_unit': 'word',
+            'vect_model': 'cbow',
+            'model_head': 'sm',
+            'lower_case': False,
+            'batch_size': 6,
+            'bucket_cbow': False
+        })
+        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+
+        for row in dataset.take(1):
+            self.assertLen(row, 2)
+            features, labels = row
+
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['filters', 'inputs'])
+
+            self.assertTrue(tf.is_tensor(features['filters']))
+            self.assertListEqual(features['filters'].shape.as_list(), [6])
+            self.assertEqual(features['filters'].dtype, tf.bool)
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [6, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [6])
+            self.assertEqual(labels.dtype, tf.int64)
+
+    def test_word_cbowpos_ss_cased_nobuck(self):
+        h_params = build_hparams({
+            'input_unit': 'word',
+            'vect_model': 'cbowpos',
+            'model_head': 'ss',
+            'lower_case': False,
+            'batch_size': 4,
+            'bucket_cbow': False
+        })
+        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+
+        for features in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['filters', 'inputs', 'labels', 'positions'])
+
+            self.assertTrue(tf.is_tensor(features['filters']))
+            self.assertListEqual(features['filters'].shape.as_list(), [4])
+            self.assertEqual(features['filters'].dtype, tf.bool)
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [4, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(features['labels']))
+            self.assertListEqual(features['labels'].shape.as_list(), [4])
+            self.assertEqual(features['labels'].dtype, tf.int64)
+
+            self.assertIsInstance(features['positions'], tf.RaggedTensor)
+            self.assertListEqual(features['positions'].shape.as_list(), [4, None])
+            self.assertEqual(features['positions'].dtype, tf.int32)
+
+    def test_ngram_skipgram_nce_lower(self):
+        h_params = build_hparams({
+            'input_unit': 'ngram',
+            'vect_model': 'skipgram',
+            'model_head': 'nce',
+            'batch_size': 8
+        })
+        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+
+        for features in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['filters', 'inputs', 'labels'])
+
+            self.assertTrue(tf.is_tensor(features['filters']))
+            self.assertListEqual(features['filters'].shape.as_list(), [8])
+            self.assertEqual(features['filters'].dtype, tf.bool)
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(features['labels']))
+            self.assertListEqual(features['labels'].shape.as_list(), [8])
+            self.assertEqual(features['labels'].dtype, tf.int64)
+
+    def test_ngram_cbow_asm_cased(self):
+        h_params = build_hparams({
+            'input_unit': 'ngram',
+            'vect_model': 'cbow',
+            'model_head': 'asm',
+            'lower_case': False,
+            'batch_size': 2
+        })
+        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+
+        for features in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['filters', 'inputs', 'labels', 'lengths'])
+
+            self.assertTrue(tf.is_tensor(features['filters']))
+            self.assertListEqual(features['filters'].shape.as_list(), [8])
+            self.assertEqual(features['filters'].dtype, tf.bool)
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [8, None, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(features['labels']))
+            self.assertListEqual(features['labels'].shape.as_list(), [8])
+            self.assertEqual(features['labels'].dtype, tf.int64)
+
+            self.assertTrue(tf.is_tensor(features['lengths']))
+            self.assertListEqual(features['lengths'].shape.as_list(), [8])
+            self.assertEqual(features['lengths'].dtype, tf.int32)
+
+    def test_ngram_cbowpos_sm_cased(self):
+        h_params = build_hparams({
+            'input_unit': 'ngram',
+            'vect_model': 'cbowpos',
+            'model_head': 'sm',
+            'lower_case': False,
+            'batch_size': 2
+        })
+        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+
+        for row in dataset.take(1):
+            self.assertLen(row, 2)
+            features, labels = row
+
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['filters', 'inputs', 'lengths', 'positions'])
+
+            self.assertTrue(tf.is_tensor(features['filters']))
+            self.assertListEqual(features['filters'].shape.as_list(), [8])
+            self.assertEqual(features['filters'].dtype, tf.bool)
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [8, None, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(features['lengths']))
+            self.assertListEqual(features['lengths'].shape.as_list(), [8])
+            self.assertEqual(features['lengths'].dtype, tf.int32)
+
+            self.assertIsInstance(features['positions'], tf.RaggedTensor)
+            self.assertListEqual(features['positions'].shape.as_list(), [8, None])
+            self.assertEqual(features['positions'].dtype, tf.int32)
+
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertEqual(labels.dtype, tf.int64)
+
+
+class TestVocabDataset(tf.test.TestCase):
+    def setUp(self):
+        np.random.seed(1)
+        tf.random.set_seed(2)
+        self.data_dir = os.path.join(os.path.dirname(__file__), 'data')
+
+    def test_char_skipgram_sm_lower(self):
+        h_params = build_hparams({
+            'input_unit': 'char',
+            'vect_model': 'skipgram',
+            'model_head': 'sm',
+            'batch_size': 6
+        })
+        dataset = vocab_dataset(self.data_dir, h_params)
 
         for features, labels in dataset.take(1):
-            self.assertEqual(dict, type(labels))
-            self.assertEqual(['sentence', 'token'], sorted(labels.keys()))
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['inputs'])
 
-            self.assertEqual(dict, type(features))
-            self.assertEqual([
-                'document',
-                'length',
-                'token_weights',
-                'word_length',
-                'word_lower',
-                'word_mixed',
-                'word_ngrams',
-                'word_nocase',
-                'word_title',
-                'word_upper',
-                'words',
-            ], sorted(features.keys()))
+            self.assertTrue(tf.is_tensor(features['inputs']))
+            self.assertListEqual(features['inputs'].shape.as_list(), [6])
+            self.assertEqual(features['inputs'].dtype, tf.string)
 
-            del features['word_ngrams']  # breaks self.evaluate
-            features, labels = self.evaluate([features, labels])
-            # self.assertEqual(10, len(features['document']))
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [6])
+            self.assertEqual(labels.dtype, tf.string)
 
-            self.assertEqual(3, len(labels['token'].shape))
-            # self.assertEqual(10, labels['sentences'].shape[0])
+    def test_char_cbow_ss_cased(self):
+        h_params = build_hparams({
+            'input_unit': 'char',
+            'vect_model': 'cbow',
+            'model_head': 'ss',
+            'lower_case': False,
+            'batch_size': 6
+        })
+        dataset = vocab_dataset(self.data_dir, h_params)
 
-            # self.assertAllEqual(labels['tokens'].shape, features['words'].shape)
-            # self.assertAllEqual(labels['sentences'].shape, features['word_length'].shape)
+        for features, labels in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['inputs', 'lengths'])
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(features['lengths']))
+            self.assertListEqual(features['lengths'].shape.as_list(), [8])
+            self.assertEqual(features['lengths'].dtype, tf.int32)
+
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertEqual(labels.dtype, tf.string)
+
+    def test_char_cbowpos_nce_cased(self):
+        h_params = build_hparams({
+            'input_unit': 'char',
+            'vect_model': 'cbowpos',
+            'model_head': 'nce',
+            'lower_case': False,
+            'batch_size': 10
+        })
+        dataset = vocab_dataset(self.data_dir, h_params)
+
+        for features, labels in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['inputs', 'lengths', 'positions'])
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(features['lengths']))
+            self.assertListEqual(features['lengths'].shape.as_list(), [8])
+            self.assertEqual(features['lengths'].dtype, tf.int32)
+
+            self.assertIsInstance(features['positions'], tf.RaggedTensor)
+            self.assertListEqual(features['positions'].shape.as_list(), [8, None])
+            self.assertEqual(features['positions'].dtype, tf.int32)
+
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertEqual(labels.dtype, tf.string)
+
+    def test_word_skipgram_asm_lower(self):
+        h_params = build_hparams({
+            'input_unit': 'word',
+            'vect_model': 'skipgram',
+            'model_head': 'asm',
+            'batch_size': 4
+        })
+        dataset = vocab_dataset(self.data_dir, h_params)
+
+        for features, labels in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['inputs'])
+
+            self.assertTrue(tf.is_tensor(features['inputs']))
+            self.assertListEqual(features['inputs'].shape.as_list(), [4])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [4])
+            self.assertEqual(labels.dtype, tf.string)
+
+    def test_word_cbow_sm_cased_nobuck(self):
+        h_params = build_hparams({
+            'input_unit': 'word',
+            'vect_model': 'cbow',
+            'model_head': 'sm',
+            'lower_case': False,
+            'batch_size': 6,
+            'bucket_cbow': False
+        })
+        dataset = vocab_dataset(self.data_dir, h_params)
+
+        for features, labels in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['inputs'])
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [6, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [6])
+            self.assertEqual(labels.dtype, tf.string)
+
+    def test_word_cbowpos_ss_cased_nobuck(self):
+        h_params = build_hparams({
+            'input_unit': 'word',
+            'vect_model': 'cbowpos',
+            'model_head': 'ss',
+            'lower_case': False,
+            'batch_size': 4,
+            'bucket_cbow': False
+        })
+        dataset = vocab_dataset(self.data_dir, h_params)
+
+        for features, labels in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['inputs', 'positions'])
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [4, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertIsInstance(features['positions'], tf.RaggedTensor)
+            self.assertListEqual(features['positions'].shape.as_list(), [4, None])
+            self.assertEqual(features['positions'].dtype, tf.int32)
+
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [4])
+            self.assertEqual(labels.dtype, tf.string)
+
+    def test_ngram_skipgram_nce_lower(self):
+        h_params = build_hparams({
+            'input_unit': 'ngram',
+            'vect_model': 'skipgram',
+            'model_head': 'nce',
+            'batch_size': 8
+        })
+        dataset = vocab_dataset(self.data_dir, h_params)
+
+        for features, labels in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['inputs'])
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertEqual(labels.dtype, tf.string)
+
+    def test_ngram_cbow_asm_cased(self):
+        h_params = build_hparams({
+            'input_unit': 'ngram',
+            'vect_model': 'cbow',
+            'model_head': 'asm',
+            'lower_case': False,
+            'batch_size': 2
+        })
+        dataset = vocab_dataset(self.data_dir, h_params)
+
+        for features, labels in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['inputs', 'lengths'])
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [8, None, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(features['lengths']))
+            self.assertListEqual(features['lengths'].shape.as_list(), [8])
+            self.assertEqual(features['lengths'].dtype, tf.int32)
+
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertEqual(labels.dtype, tf.string)
+
+    def test_ngram_cbowpos_sm_cased(self):
+        h_params = build_hparams({
+            'input_unit': 'ngram',
+            'vect_model': 'cbowpos',
+            'model_head': 'sm',
+            'lower_case': False,
+            'batch_size': 2
+        })
+        dataset = vocab_dataset(self.data_dir, h_params)
+
+        for features, labels in dataset.take(1):
+            self.assertIsInstance(features, dict)
+            self.assertEqual(sorted(features.keys()), ['inputs', 'lengths', 'positions'])
+
+            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
+            self.assertListEqual(features['inputs'].shape.as_list(), [8, None, None])
+            self.assertEqual(features['inputs'].dtype, tf.string)
+
+            self.assertTrue(tf.is_tensor(features['lengths']))
+            self.assertListEqual(features['lengths'].shape.as_list(), [8])
+            self.assertEqual(features['lengths'].dtype, tf.int32)
+
+            self.assertIsInstance(features['positions'], tf.RaggedTensor)
+            self.assertListEqual(features['positions'].shape.as_list(), [8, None])
+            self.assertEqual(features['positions'].dtype, tf.int32)
+
+            self.assertTrue(tf.is_tensor(labels))
+            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertEqual(labels.dtype, tf.string)
+
+
+if __name__ == "__main__":
+    tf.test.main()

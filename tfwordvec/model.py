@@ -2,156 +2,95 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import math
-import six
 import tensorflow as tf
-from tensorflow.contrib.estimator import clip_gradients_by_norm
-from tensorflow.python.estimator.canned.optimizers import get_optimizer_instance
-
-_UNIQUE_LABEL = '<UNK>'
-_CLIP_NORM = 5.0
-
-
-class VectorModel(object):
-    CHAR_SKIPGRAM = 'CHAR_SKIPGRAM'
-    CHAR_CBOW = 'CHAR_CBOW'
-    WORD_SKIPGRAM = 'WORD_SKIPGRAM'
-    WORD_CBOW = 'WORD_CBOW'
-    NGRAM_SKIPGRAM = 'NGRAM_SKIPGRAM'  # FastText
-
-    @classmethod
-    def all(cls):
-        return cls.CHAR_SKIPGRAM, cls.CHAR_CBOW, cls.WORD_SKIPGRAM, cls.WORD_CBOW, cls.NGRAM_SKIPGRAM
-
-    @classmethod
-    def validate(cls, key):
-        if not isinstance(key, six.string_types) or key not in cls.all():
-            raise ValueError('Invalid vector model {}'.format(key))
+from tensorflow.keras import Model
+from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import Embedding, Dense, Multiply
+from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
+from tensorflow.python.keras.layers.preprocessing.reduction import Reduction
+from tfmiss.keras.layers import AdaptiveEmbedding, AdaptiveSoftmax, NoiseContrastiveEstimation, SampledSofmax, L2Scale
 
 
-class LossFunction(object):
-    NOISE_CONTRASTIVE_ESTIMATION = 'NOISE_CONTRASTIVE_ESTIMATION'
-    SAMPLED_SOFTMAX = 'SAMPLED_SOFTMAX'
+def build_model(h_params, unit_vocab, label_vocab):
+    top_labels, _ = label_vocab.split_by_frequency(h_params.label_freq)
+    num_labels = len(top_labels)
 
-    @classmethod
-    def all(cls):
-        return cls.NOISE_CONTRASTIVE_ESTIMATION, cls.SAMPLED_SOFTMAX
+    inputs = _encoder_inputs(h_params)
+    if 'sm' != h_params.model_head:
+        inputs['labels'] = Input(shape=(None,), dtype=tf.int64)
 
-    @classmethod
-    def validate(cls, key):
-        if not isinstance(key, six.string_types) or key not in cls.all():
-            raise ValueError('Invalid loss function {}'.format(key))
+    encoder = _build_encoder(h_params, unit_vocab)
+    outputs = encoder(inputs)
+
+    if 'ss' == h_params.model_head:
+        head = SampledSofmax(num_labels, h_params.neg_samp)
+        outputs = head([outputs, inputs['labels']])
+    elif 'nce' == h_params.model_head:
+        head = NoiseContrastiveEstimation(num_labels, h_params.neg_samp)
+        outputs = head([outputs, inputs['labels']])
+    elif 'asm' == h_params.model_head:
+        head = AdaptiveSoftmax(num_labels, h_params.asm_cutoff, h_params.asm_factor, h_params.asm_drop)
+        outputs = head([outputs, inputs['labels']])
+    else:  # 'sm' == h_params.model_head:
+        head = Dense(num_labels, activation='softmax')
+        outputs = head(outputs)
+
+    model = Model(inputs=inputs, outputs=outputs)
+
+    return model, encoder
 
 
-def build_model_fn(labels_vocab, embed_size, sparse_comb, loss_func, sampled_count, train_opt, learn_rate,
-                   features, labels, mode, params, config):
-    del params, config
+def _build_encoder(h_params, unit_vocab):
+    inputs = _encoder_inputs(h_params)
 
-    if _UNIQUE_LABEL not in labels_vocab:
-        raise ValueError('Labels vocabulary should contain "unique" ({}) label'.format(_UNIQUE_LABEL))
-    vocab_size = len(labels_vocab)
-    unique_id = labels_vocab.index(_UNIQUE_LABEL)
+    outputs = _encoder_vectorization(h_params, unit_vocab)(inputs['inputs'])
+    outputs = _encoder_embedding(h_params, 999)(outputs)
 
-    if not isinstance(features, dict):
-        raise ValueError('Features should be a dict of `Tensor`s. Given type: {}'.format(type(features)))
-    if 'source' not in features:
-        raise ValueError('Features should contain `source` key. Given keys: {}'.format(list(features.keys())))
-    if not isinstance(features['source'], tf.Tensor) and not isinstance(features['source'], tf.SparseTensor):
-        raise ValueError(
-            'Feature `source` should be a `Tensor` or a `SpaseTensor`. Given type: {}'.format(type(features['source'])))
+    if 'ngram' == h_params.input_unit:
+        outputs = Reduction(h_params.ngram_comb)(outputs)
 
-    partitioner = tf.variable_axis_size_partitioner(
-        max_shard_bytes=2 ** 30  # 1Gb
-    )
+    if 'cbowpos' == h_params.vect_model:
+        positions = Embedding(h_params.window_size * 2 - 1, h_params.embed_size)(inputs['positions'])
+        multiply = Multiply()
+        outputs = multiply([outputs, positions])
 
-    with tf.variable_scope('model', values=tuple(six.itervalues(features)), partitioner=partitioner):
-        # with tf.device('cpu:0'):  # TODO
-        embedding_weights = tf.get_variable(
-            name='embedding_weights',
-            shape=[vocab_size, embed_size],
-            initializer=tf.random_uniform_initializer(
-                minval=-0.5 / embed_size,
-                maxval=0.5 / embed_size
-            )
-        )
+    if h_params.vect_model in {'cbow', 'cbowpos'}:
+        outputs = Reduction('mean')(outputs)
 
-        lookup_table = tf.contrib.lookup.index_table_from_tensor(
-            mapping=labels_vocab,
-            default_value=unique_id
-        )
+    if h_params.l2_scale > 0.:
+        outputs = L2Scale(h_params.l2_scale)(outputs)
 
-        source_ids = lookup_table.lookup(features['source'])
-        if isinstance(features, tf.SparseTensor):
-            source_embeddings = tf.nn.safe_embedding_lookup_sparse(
-                embedding_weights=embedding_weights,
-                sparse_ids=source_ids,
-                combiner=sparse_comb,
-                default_id=unique_id,
-                partition_strategy='div',
-            )
-        else:
-            source_embeddings = tf.nn.embedding_lookup(
-                params=embedding_weights,
-                ids=source_ids,
-                partition_strategy='div',
-            )
+    return Model(inputs=inputs, outputs=outputs)
 
-        if mode == tf.estimator.ModeKeys.PREDICT:
-            predictions = {'vectors': source_embeddings}
-            return tf.estimator.EstimatorSpec(mode, predictions=predictions)
 
-        softmax_weights = tf.get_variable(
-            name='softmax_weights',
-            shape=[vocab_size, embed_size],
-            initializer=tf.truncated_normal_initializer(
-                stddev=1.0 / math.sqrt(embed_size)
-            )
-        )
-        softmax_biases = tf.get_variable(
-            name='softmax_biases',
-            shape=[vocab_size],
-            initializer=tf.zeros_initializer()
-        )
+def _encoder_inputs(h_params):
+    shape_dims = 'skipgram' != h_params.vect_model + 'ngram' == h_params.input_unit
+    inputs = {
+        'inputs': Input(
+            shape=(None,) * shape_dims,
+            dtype=tf.string,
+            ragged='skipgram' != h_params.vect_model)
+    }
 
-        if mode == tf.estimator.ModeKeys.EVAL:
-            source_logits = tf.nn.xw_plus_b(source_embeddings, tf.transpose(softmax_weights), softmax_biases)
-            loss_op = tf.nn.softmax_cross_entropy_with_logits_v2(
-                labels=tf.one_hot(labels, vocab_size),
-                logits=source_logits
-            )
-            return tf.estimator.EstimatorSpec(mode, loss=loss_op, eval_metric_ops={})
+    if 'cbowpos' == h_params.vect_model:
+        inputs['positions'] = Input(shape=(None,), dtype=tf.int32, ragged=True)
 
-        label_ids = tf.expand_dims(
-            lookup_table.lookup(labels),
-            axis=-1
-        )
+    return inputs
 
-        LossFunction.validate(loss_func)
-        if LossFunction.NOISE_CONTRASTIVE_ESTIMATION == loss_func:
-            loss_op = tf.reduce_mean(tf.nn.nce_loss(
-                weights=softmax_weights,
-                biases=softmax_biases,
-                labels=label_ids,
-                inputs=source_embeddings,
-                num_sampled=sampled_count,
-                num_classes=vocab_size,
-                partition_strategy='div'
-            ))
-        else:  # LossFunction.SAMPLED_SOFTMAX == loss_func
-            loss_op = tf.reduce_mean(tf.nn.sampled_softmax_loss(
-                weights=softmax_weights,
-                biases=softmax_biases,
-                labels=label_ids,
-                inputs=source_embeddings,
-                num_sampled=sampled_count,
-                num_classes=vocab_size,
-                partition_strategy='div',
-            ))
 
-        assert mode == tf.estimator.ModeKeys.TRAIN
+def _encoder_vectorization(h_params, unit_vocab):
+    unit_top, _ = unit_vocab.split_by_freq(h_params.unit_freq)
+    unit_keys = unit_top.tokens()
+    vectorization = TextVectorization(
+        max_tokens=len(unit_keys), standardize=None, split=None, pad_to_max_tokens=False)
+    vectorization.set_vocabulary(unit_keys)
 
-        opt_inst = get_optimizer_instance(train_opt, learning_rate=learn_rate)
-        opt_inst = clip_gradients_by_norm(opt_inst, _CLIP_NORM)
-        train_op = opt_inst.minimize(loss_op, global_step=tf.train.get_global_step())
+    return vectorization
 
-        return tf.estimator.EstimatorSpec(mode, loss=loss_op, train_op=train_op)
+
+def _encoder_embedding(h_params, input_dim):
+    if 'adapt' == h_params.embed_type:
+        return AdaptiveEmbedding(h_params.aemb_cutoff, input_dim, h_params.embed_size, h_params.aemb_factor)
+    else:
+        with tf.device('/CPU:0'):
+            return Embedding(input_dim, h_params.embed_size)
