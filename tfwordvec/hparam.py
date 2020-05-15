@@ -100,9 +100,9 @@ def build_hparams(custom):
         raise ValueError('Bad batch size')
     if 0 >= params.num_epochs:
         raise ValueError('Bad number of epochs')
-    if 0 >= len(params.train_optim):
+    if not len(params.train_optim):
         raise ValueError('Bad train optimizer')
-    else:
+    elif 'ranger' != params.train_optim.lower():
         try:
             core_opt.get(params.train_optim)
         except:

@@ -8,6 +8,8 @@ import logging
 import os
 import tensorflow as tf
 from tensorflow.keras.mixed_precision import experimental as mixed_precision
+from tensorflow_addons.optimizers import Lookahead, RectifiedAdam
+from tfmiss.keras.callbacks import LRFinder
 from nlpvocab import Vocabulary
 from .hparam import build_hparams
 from .input import train_dataset
@@ -15,7 +17,7 @@ from .model import build_model
 from .vocab import vocab_names
 
 
-def train_model(data_path, params_path, model_path):
+def train_model(data_path, params_path, model_path, findlr_steps=0):
     with open(params_path, 'r') as f:
         h_params = build_hparams(json.loads(f.read()))
 
@@ -27,40 +29,61 @@ def train_model(data_path, params_path, model_path):
         policy = mixed_precision.Policy('mixed_float16')
         mixed_precision.set_policy(policy)
 
-    dataset = train_dataset(data_path, h_params, label_vocab)
-    model, encoder = build_model(h_params, unit_vocab, label_vocab)
+    lr_finder = None if not findlr_steps else LRFinder(findlr_steps)
     callbacks = [
         tf.keras.callbacks.TensorBoard(os.path.join(model_path, 'logs'), profile_batch='20, 30'),
         tf.keras.callbacks.ModelCheckpoint(os.path.join(model_path, 'train'), monitor='loss', verbose=True)
     ]
+    if lr_finder:
+        callbacks.append(lr_finder)
 
-    optimizer = tf.keras.optimizers.get(h_params.train_optim)
-    tf.keras.backend.set_value(optimizer.lr, h_params.learn_rate)
+    if 'ranger' == h_params.train_optim.lower():
+        optimizer = Lookahead(RectifiedAdam(h_params.learn_rate))
+    else:
+        optimizer = tf.keras.optimizers.get(h_params.train_optim)
+        tf.keras.backend.set_value(optimizer.lr, h_params.learn_rate)
+
+    dataset = train_dataset(data_path, h_params, label_vocab)
+    model, encoder = build_model(h_params, unit_vocab, label_vocab)
     model.compile(
         optimizer=optimizer,
         loss='sparse_categorical_crossentropy' if 'sm' == h_params.model_head else None,
-        run_eagerly=False
+        run_eagerly=findlr_steps > 0
     )
     model.summary()
-    model.fit(dataset, epochs=h_params.num_epochs, callbacks=callbacks)
+    model.fit(
+        dataset,
+        epochs=1 if lr_finder else h_params.num_epochs,
+        callbacks=callbacks,
+        steps_per_epoch=findlr_steps if lr_finder else None
+    )
 
-    tf.saved_model.save(encoder, os.path.join(model_path, 'export'))
+    if lr_finder:
+        tf.get_logger().info('Best lr should be near: {}'.format(lr_finder.find()))
+        tf.get_logger().info('Best lr graph with average=10: {}'.format(lr_finder.plot(10)))
+    else:
+        tf.saved_model.save(encoder, os.path.join(model_path, 'export'))
 
 
 def main():
     parser = argparse.ArgumentParser(description='Word2Vec model trainer')
     parser.add_argument(
-        'data_path',
-        type=str,
-        help='Path to source .txt.gz documents with one sentence per line')
-    parser.add_argument(
         'params_path',
         type=argparse.FileType('rb'),
         help='JSON-encoded model hyperparameters file')
     parser.add_argument(
+        'data_path',
+        type=str,
+        help='Path to source .txt.gz documents with one sentence per line')
+    parser.add_argument(
         'model_path',
         type=str,
         help='Path to save model')
+    parser.add_argument(
+        '--findlr_steps',
+        type=int,
+        default=0,
+        help='Run model with LRFinder callback')
 
     argv, _ = parser.parse_known_args()
     if not os.path.exists(argv.data_path) or not os.path.isdir(argv.data_path):
@@ -71,4 +94,4 @@ def main():
 
     tf.get_logger().setLevel(logging.INFO)
 
-    train_model(argv.data_path, params_path, argv.model_path)
+    train_model(argv.data_path, params_path, argv.model_path, argv.findlr_steps)

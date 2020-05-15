@@ -35,6 +35,23 @@ def extract_vocab(src_path, h_params):
     return unit_vocab, label_vocab
 
 
+def vocab_names(data_path, h_params, format=Vocabulary.FORMAT_BINARY_PICKLE):
+    model_name = h_params.vect_model
+    if 'cbowpos' == h_params.vect_model:
+        model_name = 'cbow'
+
+    ext = 'pkl' if Vocabulary.FORMAT_BINARY_PICKLE == format else 'tsv'
+
+    unit_vocab = 'vocab_{}_{}_unit.{}'.format(model_name, h_params.input_unit, ext)
+    label_vocab = 'vocab_{}_{}_label.{}'.format(model_name, h_params.input_unit, ext)
+
+    return os.path.join(data_path, unit_vocab), os.path.join(data_path, label_vocab)
+
+
+def _unicode_tensor(tensor):
+    return np.char.decode(tensor.numpy().astype('S'), 'utf-8')
+
+
 def main():
     parser = argparse.ArgumentParser(description='Extract vocabulary from dataset')
     parser.add_argument(
@@ -67,20 +84,3 @@ def main():
     unit1k_vocab, _ = unit_vocab.split_by_size(1000)
     unit1k_tsv = unit_tsv[:-4] + '1k' + unit_tsv[-4:]
     unit1k_vocab.save(unit1k_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
-
-
-def vocab_names(data_path, h_params, format=Vocabulary.FORMAT_BINARY_PICKLE):
-    model_name = h_params.vect_model
-    if 'cbowpos' == h_params.vect_model:
-        model_name = 'cbow'
-
-    ext = 'pkl' if Vocabulary.FORMAT_BINARY_PICKLE == format else 'tsv'
-
-    unit_vocab = 'vocab_{}_{}_unit.{}'.format(model_name, h_params.input_unit, ext)
-    label_vocab = 'vocab_{}_{}_label.{}'.format(model_name, h_params.input_unit, ext)
-
-    return os.path.join(data_path, unit_vocab), os.path.join(data_path, label_vocab)
-
-
-def _unicode_tensor(tensor):
-    return np.char.decode(tensor.numpy().astype('S'), 'utf-8')
