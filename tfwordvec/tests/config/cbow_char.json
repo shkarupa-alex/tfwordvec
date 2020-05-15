@@ -1,0 +1,11 @@
+{
+  "input_unit": "char",
+  "unit_freq": 50,
+  "label_freq": 30,
+  "ngram_comb": "sum",
+  "vect_model": "cbow",
+  "window_size": 5,
+  "samp_thold": 1e-1,
+  "model_head": "sm",
+  "num_epochs": 1
+}

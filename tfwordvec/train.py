@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import tensorflow as tf
+from tensorflow.keras.mixed_precision import experimental as mixed_precision
 from nlpvocab import Vocabulary
 from .hparam import build_hparams
 from .input import train_dataset
@@ -22,20 +23,26 @@ def train_model(data_path, params_path, model_path):
     unit_vocab = Vocabulary.load(unit_path)
     label_vocab = Vocabulary.load(label_path)
 
+    if h_params.mixed_fp16:
+        policy = mixed_precision.Policy('mixed_float16')
+        mixed_precision.set_policy(policy)
+
     dataset = train_dataset(data_path, h_params, label_vocab)
     model, encoder = build_model(h_params, unit_vocab, label_vocab)
     callbacks = [
         tf.keras.callbacks.TensorBoard(os.path.join(model_path, 'logs'), profile_batch='20, 30'),
-        tf.keras.callbacks.ModelCheckpoint(model_path, monitor='loss', verbose=True)
+        tf.keras.callbacks.ModelCheckpoint(os.path.join(model_path, 'train'), monitor='loss', verbose=True)
     ]
 
+    optimizer = tf.keras.optimizers.get(h_params.train_optim)
+    tf.keras.backend.set_value(optimizer.lr, h_params.learn_rate)
     model.compile(
-        optimizer=h_params.train_optim,  # TODO lr
+        optimizer=optimizer,
         loss='sparse_categorical_crossentropy' if 'sm' == h_params.model_head else None,
-        callbacks=callbacks,
-        run_eagerly=False,
+        run_eagerly=False
     )
-    model.fit(dataset, epochs=h_params.num_epochs)
+    model.summary()
+    model.fit(dataset, epochs=h_params.num_epochs, callbacks=callbacks)
 
     tf.saved_model.save(encoder, os.path.join(model_path, 'export'))
 
@@ -59,8 +66,8 @@ def main():
     if not os.path.exists(argv.data_path) or not os.path.isdir(argv.data_path):
         raise IOError('Wrong data path')
 
-    params_path = argv.hyper_params.name
-    argv.hyper_params.close()
+    params_path = argv.params_path.name
+    argv.params_path.close()
 
     tf.get_logger().setLevel(logging.INFO)
 

@@ -172,10 +172,9 @@ def _label_lookup(label_vocab, h_params):
 
     top, _ = label_vocab.split_by_frequency(h_params.label_freq)
     keys = top.tokens() + [UNK_MARK]
-    values = tf.range(len(keys), dtype=tf.int64)
+    values = tf.range(len(keys), dtype=tf.int32)
     last = len(keys) - 1
     table = tf.lookup.StaticHashTable(tf.lookup.KeyValueTensorInitializer(
-        keys=keys, values=values,
-        key_dtype=tf.string, value_dtype=tf.int64), last)
+        keys=keys, values=values, key_dtype=tf.string), last)
 
     return table, last

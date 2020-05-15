@@ -15,7 +15,7 @@ def build_hparams(custom):
         input_unit='word',  # or 'char' or 'ngram'
         lower_case=True,
         zero_digits=False,
-        unit_freq=0,
+        unit_freq=1,
         label_freq=1,
         ngram_minn=3,
         ngram_maxn=5,
@@ -29,6 +29,7 @@ def build_hparams(custom):
         aemb_cutoff=[0],
         aemb_factor=4,
         samp_thold=1e-3,
+        l2_scale=0.,
 
         model_head='ss',  # or 'nce' or 'asm' or 'sm'
         neg_samp=5,
@@ -39,7 +40,8 @@ def build_hparams(custom):
         batch_size=256,
         bucket_cbow=True,
         num_epochs=5,
-        train_optim='adam',
+        mixed_fp16=False,
+        train_optim='Adam',
         learn_rate=0.05,
     )
     params.embed_cutoff = []
@@ -52,11 +54,12 @@ def build_hparams(custom):
     params.vect_model = params.vect_model.lower()
     params.embed_type = params.embed_type.lower()
     params.model_head = params.model_head.lower()
-    params.train_optim = params.train_optim.lower()
+    # Disabled to use tensorflow-addons optimizers
+    # params.train_optim = params.train_optim.lower()
 
     if params.input_unit not in {'char', 'word', 'ngram'}:
         raise ValueError('Unsupported input unit')
-    if 0 > params.unit_freq:
+    if 0 >= params.unit_freq:
         raise ValueError('Bad minimum unit frequency')
     if 0 >= params.label_freq:
         raise ValueError('Bad minimum label frequency')

@@ -60,7 +60,7 @@ def main():
     unit_vocab.save(unit_pkl)
     label_vocab.save(label_pkl)
 
-    unit_tsv, label_tsv = vocab_names(argv.src_path, h_params)
+    unit_tsv, label_tsv = vocab_names(argv.src_path, h_params, Vocabulary.FORMAT_TSV_WITH_HEADERS)
     unit_vocab.save(unit_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
     label_vocab.save(label_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
 
@@ -76,8 +76,8 @@ def vocab_names(data_path, h_params, format=Vocabulary.FORMAT_BINARY_PICKLE):
 
     ext = 'pkl' if Vocabulary.FORMAT_BINARY_PICKLE == format else 'tsv'
 
-    unit_vocab = 'vocab_{}_{}.{}'.format(model_name, h_params.input_unit, ext)
-    label_vocab = 'vocab_{}_label.{}}'.format(model_name, ext)
+    unit_vocab = 'vocab_{}_{}_unit.{}'.format(model_name, h_params.input_unit, ext)
+    label_vocab = 'vocab_{}_{}_label.{}'.format(model_name, h_params.input_unit, ext)
 
     return os.path.join(data_path, unit_vocab), os.path.join(data_path, label_vocab)
 
