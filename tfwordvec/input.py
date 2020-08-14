@@ -77,21 +77,25 @@ def _rebatch_dataset(dataset, h_params, filter_key=None):
     if h_params.vect_model in {'cbow', 'cbowpos'} and h_params.bucket_cbow:
         buck_bounds = list(range(2, h_params.window_size * 2 + 2))
         buck_bounds, batch_sizes, _ = estimate_bucket_pipeline(buck_bounds, h_params.batch_size, safe=False)
-
-        def _length_fn(features, *args):
-            if 'lengths' not in features:
-                raise ValueError('Features should contain "lengths" to use bucketing')
-
-            return features['lengths']
-
         dataset = dataset.apply(tf.data.experimental.bucket_by_sequence_length(
-            _length_fn,
+            lambda features, *args: features['lengths'],
             buck_bounds,
             batch_sizes,
             no_padding=True
         ))
     else:
         dataset = dataset.batch(h_params.batch_size)
+
+    def _drop_unused(features, labels=None):
+        features.pop('filters', None)
+        features.pop('lengths', None)
+
+        if labels is None:
+            return features
+
+        return features, labels
+
+    dataset = dataset.map(_drop_unused, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
@@ -148,9 +152,9 @@ def _transform_model(units, h_params):
             positions = tf.ragged.map_flat_values(
                 lambda flat: tf.where(
                     tf.greater(flat, 0),
-                    flat - 1 + h_params.window_size,
-                    flat + h_params.window_size
-                ),
+                    flat - 1,
+                    flat
+                ) + h_params.window_size,
                 positions)
             features['positions'] = positions
     else:
@@ -172,7 +176,7 @@ def _label_lookup(label_vocab, h_params):
 
     top, _ = label_vocab.split_by_frequency(h_params.label_freq)
     keys = top.tokens() + [UNK_MARK]
-    values = tf.range(len(keys), dtype=tf.int32)
+    values = tf.range(len(keys), dtype=tf.int64)
     last = len(keys) - 1
     table = tf.lookup.StaticHashTable(tf.lookup.KeyValueTensorInitializer(
         keys=keys, values=values, key_dtype=tf.string), last)

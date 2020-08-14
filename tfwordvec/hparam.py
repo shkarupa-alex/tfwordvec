@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from tfmiss.training import HParams
 from tensorflow.keras import optimizers as core_opt
-from tensorflow_addons import optimizers as add_opt
+from tensorflow_addons import optimizers as add_opt  # Required to initialize custom optimizers
 
 
 def build_hparams(custom):
@@ -19,7 +19,7 @@ def build_hparams(custom):
         label_freq=1,
         ngram_minn=3,
         ngram_maxn=5,
-        ngram_self='always',  # or 'asis' or 'never' or 'alone'
+        ngram_self='always',  # or 'alone'
         ngram_comb='mean',  # or 'sum' or 'min' or 'max' or 'prod'
 
         vect_model='cbow',  # or 'skipgram' or 'cbowpos'
@@ -41,6 +41,7 @@ def build_hparams(custom):
         bucket_cbow=True,
         num_epochs=5,
         mixed_fp16=False,
+        use_jit=False,
         train_optim='Adam',
         learn_rate=0.05,
     )
@@ -63,9 +64,9 @@ def build_hparams(custom):
         raise ValueError('Bad minimum unit frequency')
     if 0 >= params.label_freq:
         raise ValueError('Bad minimum label frequency')
-    if not (0 < params.ngram_minn < params.ngram_maxn):
+    if not 0 < params.ngram_minn < params.ngram_maxn:
         raise ValueError('Bad min/max ngram sizes')
-    if params.ngram_self not in {'always', 'asis', 'never', 'alone'}:
+    if params.ngram_self not in {'always', 'alone'}:
         raise ValueError('Unsupported ngram extractor')
     if params.ngram_comb not in {'mean', 'sum', 'min', 'max', 'prod'}:
         raise ValueError('Unsupported ngram combiner')

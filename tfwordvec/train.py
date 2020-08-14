@@ -7,10 +7,9 @@ import json
 import logging
 import os
 import tensorflow as tf
-from tensorflow.keras.mixed_precision import experimental as mixed_precision
+from nlpvocab import Vocabulary
 from tensorflow_addons.optimizers import Lookahead, RectifiedAdam
 from tfmiss.keras.callbacks import LRFinder
-from nlpvocab import Vocabulary
 from .hparam import build_hparams
 from .input import train_dataset
 from .model import build_model
@@ -25,17 +24,25 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     unit_vocab = Vocabulary.load(unit_path)
     label_vocab = Vocabulary.load(label_path)
 
-    if h_params.mixed_fp16:
-        policy = mixed_precision.Policy('mixed_float16')
-        mixed_precision.set_policy(policy)
+    if h_params.use_jit:
+        os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit'
+        # tf.config.optimizer.set_jit(True)
 
-    lr_finder = None if not findlr_steps else LRFinder(findlr_steps)
-    callbacks = [
-        tf.keras.callbacks.TensorBoard(os.path.join(model_path, 'logs'), profile_batch='20, 30'),
-        tf.keras.callbacks.ModelCheckpoint(os.path.join(model_path, 'train'), monitor='loss', verbose=True)
-    ]
-    if lr_finder:
-        callbacks.append(lr_finder)
+        # TODO
+        # tf.config.optimizer.set_experimental_options()
+
+    if h_params.mixed_fp16:
+        tf.keras.mixed_precision.experimental.set_policy('mixed_float16')
+
+    if findlr_steps:
+        lr_finder = LRFinder(findlr_steps)
+        callbacks = [lr_finder]
+    else:
+        lr_finder = None
+        callbacks = [
+            tf.keras.callbacks.TensorBoard(os.path.join(model_path, 'logs'), update_freq=100, profile_batch='140, 160'),
+            tf.keras.callbacks.ModelCheckpoint(os.path.join(model_path, 'train'), monitor='loss', verbose=True)
+        ]
 
     if 'ranger' == h_params.train_optim.lower():
         optimizer = Lookahead(RectifiedAdam(h_params.learn_rate))
@@ -53,14 +60,14 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     model.summary()
     model.fit(
         dataset,
-        epochs=1 if lr_finder else h_params.num_epochs,
+        epochs=1 if findlr_steps > 0 else h_params.num_epochs,
         callbacks=callbacks,
-        steps_per_epoch=findlr_steps if lr_finder else None
+        steps_per_epoch=findlr_steps if findlr_steps > 0 else None
     )
 
-    if lr_finder:
-        tf.get_logger().info('Best lr should be near: {}'.format(lr_finder.find()))
-        tf.get_logger().info('Best lr graph with average=10: {}'.format(lr_finder.plot(10)))
+    if findlr_steps > 0:
+        best_lr = lr_finder.plot()
+        tf.get_logger().info('Best lr should be near: {}'.format(best_lr))
     else:
         tf.saved_model.save(encoder, os.path.join(model_path, 'export'))
 

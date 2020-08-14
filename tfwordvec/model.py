@@ -5,9 +5,10 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input
-from tensorflow.keras.layers import Activation, Embedding, Dense, Multiply
+from tensorflow.keras.layers import Activation, Embedding, Dense
+from tensorflow.keras.layers.experimental.preprocessing import StringLookup
 from tfmiss.keras.layers import AdaptiveEmbedding, AdaptiveSoftmax, NoiseContrastiveEstimation, SampledSofmax, L2Scale
-from .layer import TextVectorization, Reduction
+from .layer import Reduction
 
 
 def build_model(h_params, unit_vocab, label_vocab):
@@ -15,11 +16,12 @@ def build_model(h_params, unit_vocab, label_vocab):
     num_labels = len(top_labels)
 
     inputs = _encoder_inputs(h_params)
-    if 'sm' != h_params.model_head:
-        inputs['labels'] = Input(name='labels', shape=(), dtype=tf.int32)
-
     encoder = _build_encoder(h_params, unit_vocab)
     outputs = encoder(inputs)
+
+    if 'sm' != h_params.model_head:
+        # Add labels input after encoder call to bypass "ignoring input" warning
+        inputs['labels'] = Input(name='labels', shape=(), dtype=tf.int32)
 
     if 'ss' == h_params.model_head:
         head = SampledSofmax(num_labels, h_params.neg_samp)
@@ -31,7 +33,7 @@ def build_model(h_params, unit_vocab, label_vocab):
         head = AdaptiveSoftmax(num_labels, h_params.asm_cutoff, h_params.asm_factor, h_params.asm_drop)
         outputs = head([outputs, inputs['labels']])
     else:  # 'sm' == h_params.model_head:
-        outputs = Dense(num_labels)(outputs)
+        outputs = Dense(num_labels, name='logits')(outputs)
         outputs = Activation('softmax', dtype=tf.float32)(outputs)
 
     model = Model(inputs=list(inputs.values()), outputs=outputs)
@@ -50,9 +52,8 @@ def _build_encoder(h_params, unit_vocab):
         outputs = Reduction(h_params.ngram_comb, name='ngrams')(outputs)
 
     if 'cbowpos' == h_params.vect_model:
-        positions = Embedding(h_params.window_size * 2 - 1, h_params.embed_size)(inputs['positions'])
-        multiply = Multiply(name='positions')
-        outputs = multiply([outputs, positions])
+        positions = Embedding(h_params.window_size * 2, h_params.embed_size)(inputs['positions'])
+        outputs = tf.keras.layers.multiply([outputs, positions], name='aligns')
 
     if h_params.vect_model in {'cbow', 'cbowpos'}:
         outputs = Reduction('mean', name='contexts')(outputs)
@@ -64,7 +65,7 @@ def _build_encoder(h_params, unit_vocab):
 
 
 def _encoder_inputs(h_params):
-    shape_dims = (h_params.vect_model in {'cbow', 'cbowpos'}) + ('ngram' == h_params.input_unit)
+    shape_dims = (h_params.vect_model in {'cbow', 'cbowpos'}) + int('ngram' == h_params.input_unit)
     inputs = {
         'inputs': Input(
             name='inputs',
@@ -82,7 +83,7 @@ def _encoder_inputs(h_params):
 def _encoder_vectorization(h_params, unit_vocab):
     unit_top, _ = unit_vocab.split_by_frequency(h_params.unit_freq)
     unit_keys = unit_top.tokens()
-    vectorization = TextVectorization(unit_keys, name='lookup')
+    vectorization = StringLookup(vocabulary=unit_keys, mask_token=None, name='lookup')
 
     return vectorization, len(unit_keys) + 1  # + [UNK]
 
