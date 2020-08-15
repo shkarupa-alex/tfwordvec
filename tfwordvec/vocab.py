@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import argparse
 import json
+import logging
 import numpy as np
 import os
 import tensorflow as tf
@@ -67,6 +68,8 @@ def main():
     if not os.path.exists(argv.src_path) or not os.path.isdir(argv.src_path):
         raise ValueError('Wrong train dataset path')
 
+    tf.get_logger().setLevel(logging.INFO)
+
     h_params = build_hparams(json.loads(argv.hyper_params.read()))
 
     tf.get_logger().info('Estimating {} and label vocabularies'.format(h_params.input_unit))
@@ -84,3 +87,4 @@ def main():
     unit1k_vocab, _ = unit_vocab.split_by_size(1000)
     unit1k_tsv = unit_tsv[:-4] + '1k' + unit_tsv[-4:]
     unit1k_vocab.save(unit1k_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
+    tf.get_logger().info('Vocabularies saved to {}'.format(argv.src_path))

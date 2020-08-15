@@ -116,6 +116,8 @@ def _line_datset(gz_file, h_params):
 
 def _transform_split(sentences, h_params):
     sentences = normalize_unicode(sentences, 'NFKC')
+    sentences = tf.strings.regex_replace(sentences, r'\s+', ' ')
+    sentences = tf.strings.strip(sentences)
     if h_params.lower_case:
         sentences = lower_case(sentences)
     if h_params.zero_digits:
