@@ -27,9 +27,7 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     if h_params.use_jit:
         os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit'
         # tf.config.optimizer.set_jit(True)
-
-        # TODO
-        # tf.config.optimizer.set_experimental_options()
+        # TODO tf.config.optimizer.set_experimental_options()
 
     if h_params.mixed_fp16:
         tf.keras.mixed_precision.experimental.set_policy('mixed_float16')

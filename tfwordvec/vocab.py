@@ -84,7 +84,13 @@ def main():
     unit_vocab.save(unit_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
     label_vocab.save(label_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
 
-    unit1k_vocab, _ = unit_vocab.split_by_size(1000)
-    unit1k_tsv = unit_tsv[:-4] + '1k' + unit_tsv[-4:]
-    unit1k_vocab.save(unit1k_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
+    if 'dense' == h_params.embed_type:
+        unit1k_vocab, _ = unit_vocab.split_by_size(1000)
+        unit1k_tsv = unit_tsv[:-4] + '1k' + unit_tsv[-4:]
+        unit1k_vocab.save(unit1k_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
+
     tf.get_logger().info('Vocabularies saved to {}'.format(argv.src_path))
+
+    doubled = 'all' if 'skipgram' == h_params.vect_model else h_params.input_unit
+    tf.get_logger().info('Remember that {} frequencies are almost doubled '
+                         'due to estimated from preprocessed dataset'.format(doubled))
