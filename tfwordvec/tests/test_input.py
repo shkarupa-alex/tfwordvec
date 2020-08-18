@@ -34,11 +34,11 @@ class TestTrainDataset(tf.test.TestCase):
             features, labels = row
 
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs'])
+            self.assertEqual(sorted(features.keys()), ['units'])
 
-            self.assertTrue(tf.is_tensor(features['inputs']))
-            self.assertListEqual(features['inputs'].shape.as_list(), [8])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertTrue(tf.is_tensor(features['units']))
+            self.assertListEqual(features['units'].shape.as_list(), [8])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(labels))
             self.assertListEqual(labels.shape.as_list(), [8])
@@ -56,11 +56,11 @@ class TestTrainDataset(tf.test.TestCase):
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs', 'labels'])
+            self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [8])
@@ -78,11 +78,11 @@ class TestTrainDataset(tf.test.TestCase):
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs', 'labels', 'positions'])
+            self.assertEqual(sorted(features.keys()), ['labels', 'positions', 'units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [8])
@@ -103,17 +103,17 @@ class TestTrainDataset(tf.test.TestCase):
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs', 'labels'])
+            self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
-            self.assertTrue(tf.is_tensor(features['inputs']))
-            self.assertListEqual(features['inputs'].shape.as_list(), [4])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertTrue(tf.is_tensor(features['units']))
+            self.assertListEqual(features['units'].shape.as_list(), [4])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [4])
             self.assertEqual(features['labels'].dtype, tf.int64)
 
-    def test_word_cbow_sm_cased_nubuck(self):
+    def test_word_cbow_sm_cased_nobuck(self):
         h_params = build_hparams({
             'input_unit': 'word',
             'vect_model': 'cbow',
@@ -129,11 +129,11 @@ class TestTrainDataset(tf.test.TestCase):
             features, labels = row
 
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs'])
+            self.assertEqual(sorted(features.keys()), ['units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [6, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [6, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(labels))
             self.assertListEqual(labels.shape.as_list(), [6])
@@ -152,11 +152,11 @@ class TestTrainDataset(tf.test.TestCase):
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs', 'labels', 'positions'])
+            self.assertEqual(sorted(features.keys()), ['labels', 'positions', 'units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [4, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [4, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [4])
@@ -177,11 +177,11 @@ class TestTrainDataset(tf.test.TestCase):
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs', 'labels'])
+            self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [8])
@@ -199,11 +199,11 @@ class TestTrainDataset(tf.test.TestCase):
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs', 'labels'])
+            self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [8, None, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [8])
@@ -224,11 +224,11 @@ class TestTrainDataset(tf.test.TestCase):
             features, labels = row
 
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs', 'positions'])
+            self.assertEqual(sorted(features.keys()), ['positions', 'units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [8, None, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertIsInstance(features['positions'], tf.RaggedTensor)
             self.assertListEqual(features['positions'].shape.as_list(), [8, None])
@@ -256,11 +256,11 @@ class TestVocabDataset(tf.test.TestCase):
 
         for features, labels in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs'])
+            self.assertEqual(sorted(features.keys()), ['units'])
 
-            self.assertTrue(tf.is_tensor(features['inputs']))
-            self.assertListEqual(features['inputs'].shape.as_list(), [6])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertTrue(tf.is_tensor(features['units']))
+            self.assertListEqual(features['units'].shape.as_list(), [6])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(labels))
             self.assertListEqual(labels.shape.as_list(), [6])
@@ -278,11 +278,11 @@ class TestVocabDataset(tf.test.TestCase):
 
         for features, labels in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs'])
+            self.assertEqual(sorted(features.keys()), ['units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(labels))
             self.assertListEqual(labels.shape.as_list(), [8])
@@ -300,11 +300,11 @@ class TestVocabDataset(tf.test.TestCase):
 
         for features, labels in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs', 'positions'])
+            self.assertEqual(sorted(features.keys()), ['positions', 'units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertIsInstance(features['positions'], tf.RaggedTensor)
             self.assertListEqual(features['positions'].shape.as_list(), [8, None])
@@ -325,11 +325,11 @@ class TestVocabDataset(tf.test.TestCase):
 
         for features, labels in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs'])
+            self.assertEqual(sorted(features.keys()), ['units'])
 
-            self.assertTrue(tf.is_tensor(features['inputs']))
-            self.assertListEqual(features['inputs'].shape.as_list(), [4])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertTrue(tf.is_tensor(features['units']))
+            self.assertListEqual(features['units'].shape.as_list(), [4])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(labels))
             self.assertListEqual(labels.shape.as_list(), [4])
@@ -348,11 +348,11 @@ class TestVocabDataset(tf.test.TestCase):
 
         for features, labels in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs'])
+            self.assertEqual(sorted(features.keys()), ['units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [6, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [6, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(labels))
             self.assertListEqual(labels.shape.as_list(), [6])
@@ -371,11 +371,11 @@ class TestVocabDataset(tf.test.TestCase):
 
         for features, labels in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs', 'positions'])
+            self.assertEqual(sorted(features.keys()), ['positions', 'units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [4, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [4, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertIsInstance(features['positions'], tf.RaggedTensor)
             self.assertListEqual(features['positions'].shape.as_list(), [4, None])
@@ -396,11 +396,11 @@ class TestVocabDataset(tf.test.TestCase):
 
         for features, labels in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs'])
+            self.assertEqual(sorted(features.keys()), ['units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [8, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(labels))
             self.assertListEqual(labels.shape.as_list(), [8])
@@ -418,11 +418,11 @@ class TestVocabDataset(tf.test.TestCase):
 
         for features, labels in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs'])
+            self.assertEqual(sorted(features.keys()), ['units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [8, None, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(labels))
             self.assertListEqual(labels.shape.as_list(), [8])
@@ -440,11 +440,11 @@ class TestVocabDataset(tf.test.TestCase):
 
         for features, labels in dataset.take(1):
             self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['inputs', 'positions'])
+            self.assertEqual(sorted(features.keys()), ['positions', 'units'])
 
-            self.assertIsInstance(features['inputs'], tf.RaggedTensor)
-            self.assertListEqual(features['inputs'].shape.as_list(), [8, None, None])
-            self.assertEqual(features['inputs'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None, None])
+            self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertIsInstance(features['positions'], tf.RaggedTensor)
             self.assertListEqual(features['positions'].shape.as_list(), [8, None])

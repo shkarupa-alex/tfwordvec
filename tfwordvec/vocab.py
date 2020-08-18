@@ -24,7 +24,7 @@ def extract_vocab(data_path, h_params):
     dataset = vocab_dataset(data_path, h_params)
 
     for features, labels in dataset:
-        units = features['inputs']
+        units = features['units']
         if isinstance(units, tf.RaggedTensor):
             units = units.flat_values
         units = _unicode_tensor(units).reshape([-1])

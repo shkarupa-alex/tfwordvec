@@ -12,7 +12,7 @@ from tfmiss.training import estimate_bucket_pipeline
 BOS_MARK = '[BOS]'
 EOS_MARK = '[EOS]'
 UNK_MARK = '[UNK]'
-RESERVED = [BOS_MARK, EOS_MARK]
+RESERVED = [BOS_MARK, EOS_MARK, UNK_MARK]
 
 
 def train_dataset(src_path, h_params, label_vocab):
@@ -168,7 +168,7 @@ def _transform_model(units, h_params):
         contexts = char_ngrams(contexts, h_params.ngram_minn, h_params.ngram_maxn,
                                h_params.ngram_self, skip=RESERVED)
 
-    features['inputs'] = contexts
+    features['units'] = contexts
 
     return features, targets
 

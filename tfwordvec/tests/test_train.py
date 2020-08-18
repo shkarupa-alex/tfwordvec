@@ -39,6 +39,15 @@ class TestTrainModel(tf.test.TestCase):
     def test_ngram_cbow(self):
         train_model(self.data_dir, os.path.join(self.params_dir, 'cbow_ngram.json'), self.model_dir)
 
+    def test_char_cbowpos(self):
+        train_model(self.data_dir, os.path.join(self.params_dir, 'cbowpos_char.json'), self.model_dir)
+
+    def test_word_cbowpos(self):
+        train_model(self.data_dir, os.path.join(self.params_dir, 'cbowpos_word.json'), self.model_dir)
+
+    def test_ngram_cbowpos(self):
+        train_model(self.data_dir, os.path.join(self.params_dir, 'cbowpos_ngram.json'), self.model_dir)
+
 
 if __name__ == "__main__":
     tf.test.main()
