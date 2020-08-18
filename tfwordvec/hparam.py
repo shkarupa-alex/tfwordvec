@@ -29,7 +29,6 @@ def build_hparams(custom):
         aemb_cutoff=[0],
         aemb_factor=4,
         samp_thold=1e-3,
-        l2_scale=0.,
 
         model_head='ss',  # or 'nce' or 'asm' or 'sm'
         neg_samp=5,
