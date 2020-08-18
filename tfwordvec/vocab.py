@@ -13,7 +13,7 @@ from .input import vocab_dataset
 from .hparam import build_hparams
 
 
-def extract_vocab(src_path, h_params):
+def extract_vocab(data_path, h_params):
     if not tf.executing_eagerly():
         raise EnvironmentError('Eager mode should be enabled by default')
 
@@ -21,7 +21,7 @@ def extract_vocab(src_path, h_params):
     h_params.window_size = 1
 
     unit_vocab, label_vocab = Vocabulary(), Vocabulary()
-    dataset = vocab_dataset(src_path, h_params)
+    dataset = vocab_dataset(data_path, h_params)
 
     for features, labels in dataset:
         units = features['inputs']
@@ -60,12 +60,12 @@ def main():
         type=argparse.FileType('rb'),
         help='JSON file with hyper parameters')
     parser.add_argument(
-        'src_path',
+        'data_path',
         type=str,
         help='Path to train .txt.gz files')
 
     argv, _ = parser.parse_known_args()
-    if not os.path.exists(argv.src_path) or not os.path.isdir(argv.src_path):
+    if not os.path.exists(argv.data_path) or not os.path.isdir(argv.data_path):
         raise ValueError('Wrong train dataset path')
 
     tf.get_logger().setLevel(logging.INFO)
@@ -73,14 +73,14 @@ def main():
     h_params = build_hparams(json.loads(argv.hyper_params.read()))
 
     tf.get_logger().info('Estimating {} and label vocabularies'.format(h_params.input_unit))
-    unit_vocab, label_vocab = extract_vocab(argv.src_path, h_params)
+    unit_vocab, label_vocab = extract_vocab(argv.data_path, h_params)
 
-    tf.get_logger().info('Saving vocabularies to {}'.format(argv.src_path))
-    unit_pkl, label_pkl = vocab_names(argv.src_path, h_params)
+    tf.get_logger().info('Saving vocabularies to {}'.format(argv.data_path))
+    unit_pkl, label_pkl = vocab_names(argv.data_path, h_params)
     unit_vocab.save(unit_pkl)
     label_vocab.save(label_pkl)
 
-    unit_tsv, label_tsv = vocab_names(argv.src_path, h_params, Vocabulary.FORMAT_TSV_WITH_HEADERS)
+    unit_tsv, label_tsv = vocab_names(argv.data_path, h_params, Vocabulary.FORMAT_TSV_WITH_HEADERS)
     unit_vocab.save(unit_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
     label_vocab.save(label_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
 
@@ -89,7 +89,7 @@ def main():
         unit1k_tsv = unit_tsv[:-4] + '1k' + unit_tsv[-4:]
         unit1k_vocab.save(unit1k_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
 
-    tf.get_logger().info('Vocabularies saved to {}'.format(argv.src_path))
+    tf.get_logger().info('Vocabularies saved to {}'.format(argv.data_path))
 
     doubled = 'all' if 'skipgram' == h_params.vect_model else h_params.input_unit
     tf.get_logger().info('Remember that {} frequencies are almost doubled '
