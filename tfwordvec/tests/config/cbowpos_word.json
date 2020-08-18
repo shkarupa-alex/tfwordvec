@@ -1,0 +1,12 @@
+{
+  "input_unit": "word",
+  "unit_freq": 4,
+  "label_freq": 2,
+  "vect_model": "cbowpos",
+  "window_size": 5,
+  "samp_thold": 1e-1,
+  "model_head": "nce",
+  "num_epochs": 1,
+  "bucket_cbow": false,
+  "train_optim": "Addons>RectifiedAdam"
+}
