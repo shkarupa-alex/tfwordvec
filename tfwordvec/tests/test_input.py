@@ -12,6 +12,8 @@ from ..input import train_dataset, vocab_dataset
 
 class TestTrainDataset(tf.test.TestCase):
     def setUp(self):
+        np.random.seed(1)
+        tf.random.set_seed(1)
         self.data_dir = os.path.join(os.path.dirname(__file__), 'data')
         self.char_vocab = Vocabulary.load(
             os.path.join(self.data_dir, 'char_vocab.tsv'),
@@ -81,15 +83,15 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(sorted(features.keys()), ['labels', 'positions', 'units'])
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8, None])
+            self.assertListEqual(features['units'].shape.as_list(), [2, None])
             self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(features['labels']))
-            self.assertListEqual(features['labels'].shape.as_list(), [8])
+            self.assertListEqual(features['labels'].shape.as_list(), [2])
             self.assertEqual(features['labels'].dtype, tf.int64)
 
             self.assertIsInstance(features['positions'], tf.RaggedTensor)
-            self.assertListEqual(features['positions'].shape.as_list(), [8, None])
+            self.assertListEqual(features['positions'].shape.as_list(), [2, None])
             self.assertEqual(features['positions'].dtype, tf.int32)
 
     def test_word_skipgram_asm_lower(self):
@@ -179,8 +181,8 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertIsInstance(features, dict)
             self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
-            self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8, None])
+            self.assertIsInstance(features['units'], tf.Tensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8])
             self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(features['labels']))
@@ -202,7 +204,7 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8, None, None])
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
             self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(features['labels']))
@@ -227,7 +229,7 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(sorted(features.keys()), ['positions', 'units'])
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8, None, None])
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
             self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertIsInstance(features['positions'], tf.RaggedTensor)
@@ -254,16 +256,9 @@ class TestVocabDataset(tf.test.TestCase):
         })
         dataset = vocab_dataset(self.data_dir, h_params)
 
-        for features, labels in dataset.take(1):
-            self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['units'])
-
-            self.assertTrue(tf.is_tensor(features['units']))
-            self.assertListEqual(features['units'].shape.as_list(), [6])
-            self.assertEqual(features['units'].dtype, tf.string)
-
+        for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
-            self.assertListEqual(labels.shape.as_list(), [6])
+            self.assertListEqual(labels.shape.as_list(), [6, None])
             self.assertEqual(labels.dtype, tf.string)
 
     def test_char_cbow_ss_cased(self):
@@ -276,16 +271,9 @@ class TestVocabDataset(tf.test.TestCase):
         })
         dataset = vocab_dataset(self.data_dir, h_params)
 
-        for features, labels in dataset.take(1):
-            self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['units'])
-
-            self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8, None])
-            self.assertEqual(features['units'].dtype, tf.string)
-
+        for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
-            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertListEqual(labels.shape.as_list(), [6, None])
             self.assertEqual(labels.dtype, tf.string)
 
     def test_char_cbowpos_nce_cased(self):
@@ -298,20 +286,9 @@ class TestVocabDataset(tf.test.TestCase):
         })
         dataset = vocab_dataset(self.data_dir, h_params)
 
-        for features, labels in dataset.take(1):
-            self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['positions', 'units'])
-
-            self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8, None])
-            self.assertEqual(features['units'].dtype, tf.string)
-
-            self.assertIsInstance(features['positions'], tf.RaggedTensor)
-            self.assertListEqual(features['positions'].shape.as_list(), [8, None])
-            self.assertEqual(features['positions'].dtype, tf.int32)
-
+        for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
-            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertListEqual(labels.shape.as_list(), [10, None])
             self.assertEqual(labels.dtype, tf.string)
 
     def test_word_skipgram_asm_lower(self):
@@ -323,16 +300,9 @@ class TestVocabDataset(tf.test.TestCase):
         })
         dataset = vocab_dataset(self.data_dir, h_params)
 
-        for features, labels in dataset.take(1):
-            self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['units'])
-
-            self.assertTrue(tf.is_tensor(features['units']))
-            self.assertListEqual(features['units'].shape.as_list(), [4])
-            self.assertEqual(features['units'].dtype, tf.string)
-
+        for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
-            self.assertListEqual(labels.shape.as_list(), [4])
+            self.assertListEqual(labels.shape.as_list(), [4, None])
             self.assertEqual(labels.dtype, tf.string)
 
     def test_word_cbow_sm_cased_nobuck(self):
@@ -346,16 +316,9 @@ class TestVocabDataset(tf.test.TestCase):
         })
         dataset = vocab_dataset(self.data_dir, h_params)
 
-        for features, labels in dataset.take(1):
-            self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['units'])
-
-            self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [6, None])
-            self.assertEqual(features['units'].dtype, tf.string)
-
+        for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
-            self.assertListEqual(labels.shape.as_list(), [6])
+            self.assertListEqual(labels.shape.as_list(), [6, None])
             self.assertEqual(labels.dtype, tf.string)
 
     def test_word_cbowpos_ss_cased_nobuck(self):
@@ -369,20 +332,9 @@ class TestVocabDataset(tf.test.TestCase):
         })
         dataset = vocab_dataset(self.data_dir, h_params)
 
-        for features, labels in dataset.take(1):
-            self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['positions', 'units'])
-
-            self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [4, None])
-            self.assertEqual(features['units'].dtype, tf.string)
-
-            self.assertIsInstance(features['positions'], tf.RaggedTensor)
-            self.assertListEqual(features['positions'].shape.as_list(), [4, None])
-            self.assertEqual(features['positions'].dtype, tf.int32)
-
+        for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
-            self.assertListEqual(labels.shape.as_list(), [4])
+            self.assertListEqual(labels.shape.as_list(), [4, None])
             self.assertEqual(labels.dtype, tf.string)
 
     def test_ngram_skipgram_nce_lower(self):
@@ -394,16 +346,9 @@ class TestVocabDataset(tf.test.TestCase):
         })
         dataset = vocab_dataset(self.data_dir, h_params)
 
-        for features, labels in dataset.take(1):
-            self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['units'])
-
-            self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8, None])
-            self.assertEqual(features['units'].dtype, tf.string)
-
+        for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
-            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertListEqual(labels.shape.as_list(), [8, None])
             self.assertEqual(labels.dtype, tf.string)
 
     def test_ngram_cbow_asm_cased(self):
@@ -416,16 +361,9 @@ class TestVocabDataset(tf.test.TestCase):
         })
         dataset = vocab_dataset(self.data_dir, h_params)
 
-        for features, labels in dataset.take(1):
-            self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['units'])
-
-            self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8, None, None])
-            self.assertEqual(features['units'].dtype, tf.string)
-
+        for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
-            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertListEqual(labels.shape.as_list(), [2, None])
             self.assertEqual(labels.dtype, tf.string)
 
     def test_ngram_cbowpos_sm_cased(self):
@@ -438,20 +376,9 @@ class TestVocabDataset(tf.test.TestCase):
         })
         dataset = vocab_dataset(self.data_dir, h_params)
 
-        for features, labels in dataset.take(1):
-            self.assertIsInstance(features, dict)
-            self.assertEqual(sorted(features.keys()), ['positions', 'units'])
-
-            self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8, None, None])
-            self.assertEqual(features['units'].dtype, tf.string)
-
-            self.assertIsInstance(features['positions'], tf.RaggedTensor)
-            self.assertListEqual(features['positions'].shape.as_list(), [8, None])
-            self.assertEqual(features['positions'].dtype, tf.int32)
-
+        for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
-            self.assertListEqual(labels.shape.as_list(), [8])
+            self.assertListEqual(labels.shape.as_list(), [2, None])
             self.assertEqual(labels.dtype, tf.string)
 
 

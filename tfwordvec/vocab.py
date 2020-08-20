@@ -11,27 +11,29 @@ import tensorflow as tf
 from nlpvocab import Vocabulary
 from .input import vocab_dataset
 from .hparam import build_hparams
+from .model import _expand_ngrams
 
 
 def extract_vocab(data_path, h_params):
     if not tf.executing_eagerly():
         raise EnvironmentError('Eager mode should be enabled by default')
 
-    tf.get_logger().info('Window size will be set to 1 during vocabularies estimation')
-    h_params.window_size = 1
-
-    unit_vocab, label_vocab = Vocabulary(), Vocabulary()
+    label_vocab = Vocabulary()
     dataset = vocab_dataset(data_path, h_params)
 
-    for features, labels in dataset:
-        units = features['units']
-        if isinstance(units, tf.RaggedTensor):
-            units = units.flat_values
-        units = _unicode_tensor(units).reshape([-1])
-        unit_vocab.update(units)
-
-        labels = _unicode_tensor(labels).reshape([-1])
+    for labels in dataset:
+        labels = _unicode_tensor(labels.flat_values)
         label_vocab.update(labels)
+
+    unit_vocab = Vocabulary()
+    if 'ngram' == h_params.input_unit:
+        ngrams = _expand_ngrams(h_params)(label_vocab.tokens())
+        for label, ngram in zip(label_vocab.tokens(), ngrams):
+            ngram = _unicode_tensor(ngram).reshape([-1])
+            for n in ngram:
+                unit_vocab[n] += label_vocab[label]
+    else:
+        unit_vocab.update(label_vocab)
 
     return unit_vocab, label_vocab
 
@@ -90,7 +92,3 @@ def main():
         unit1k_vocab.save(unit1k_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
 
     tf.get_logger().info('Vocabularies saved to {}'.format(argv.data_path))
-
-    doubled = 'all' if 'skipgram' == h_params.vect_model else h_params.input_unit
-    tf.get_logger().info('Remember that {} frequencies are almost doubled '
-                         'due to estimated from preprocessed dataset'.format(doubled))

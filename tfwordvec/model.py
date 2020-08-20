@@ -5,19 +5,21 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input
-from tensorflow.keras.layers import Activation, Embedding, Dense
+from tensorflow.keras.layers import Activation, Dense, Embedding, Lambda
 from tensorflow.keras.layers.experimental.preprocessing import StringLookup
-from tfmiss.keras.layers import AdaptiveEmbedding, AdaptiveSoftmax, NoiseContrastiveEstimation, SampledSofmax, L2Scale
-from .layer import Reduction
+from tfmiss.keras.layers import AdaptiveEmbedding, AdaptiveSoftmax, NoiseContrastiveEstimation, SampledSofmax
+from tfmiss.text import wrap_with, char_ngrams
+from .input import UNK_MARK, RESERVED
+from .layer import Reduction, MapFlat
 
 
 def build_model(h_params, unit_vocab, label_vocab):
     top_labels, _ = label_vocab.split_by_frequency(h_params.label_freq)
     num_labels = len(top_labels)
 
-    inputs = _encoder_inputs(h_params)
-    encoder = _build_encoder(h_params, unit_vocab)
-    outputs = encoder(inputs)
+    inputs = _context_inputs(h_params)
+    context_encoder, unit_encoder = _build_encoders(h_params, unit_vocab)
+    logits = context_encoder(inputs)
 
     if 'sm' != h_params.model_head:
         # Add labels input after encoder call to bypass "ignoring input" warning
@@ -25,53 +27,51 @@ def build_model(h_params, unit_vocab, label_vocab):
 
     if 'ss' == h_params.model_head:
         head = SampledSofmax(num_labels, h_params.neg_samp)
-        outputs = head([outputs, inputs['labels']])
+        probs = head([logits, inputs['labels']])
     elif 'nce' == h_params.model_head:
         head = NoiseContrastiveEstimation(num_labels, h_params.neg_samp)
-        outputs = head([outputs, inputs['labels']])
+        probs = head([logits, inputs['labels']])
     elif 'asm' == h_params.model_head:
         head = AdaptiveSoftmax(num_labels, h_params.asm_cutoff, h_params.asm_factor, h_params.asm_drop)
-        outputs = head([outputs, inputs['labels']])
+        probs = head([logits, inputs['labels']])
     else:  # 'sm' == h_params.model_head:
-        outputs = Dense(num_labels, name='logits')(outputs)
-        outputs = Activation('softmax', dtype=tf.float32)(outputs)
+        probs = Dense(num_labels, name='logits')(logits)
+        probs = Activation('softmax', dtype=tf.float32)(probs)
 
-    model = Model(inputs=list(inputs.values()), outputs=outputs)
+    model = Model(inputs=list(inputs.values()), outputs=probs, name='trainer')
 
-    return model, encoder
+    return model, context_encoder, unit_encoder
 
 
-def _build_encoder(h_params, unit_vocab):
-    inputs = _encoder_inputs(h_params)
+def _build_encoders(h_params, unit_vocab):
+    inputs = _context_inputs(h_params)
 
-    vectorization, embed_dim = _encoder_vectorization(h_params, unit_vocab)
-    outputs = vectorization(inputs['inputs'])
-    outputs = _encoder_embedding(h_params, embed_dim)(outputs)
-
-    if 'ngram' == h_params.input_unit:
-        outputs = Reduction(h_params.ngram_comb, name='ngrams')(outputs)
+    unit_encoder = _unit_encoder(h_params, unit_vocab)
+    embeddings = MapFlat(unit_encoder, name='unit_encoding')(inputs['units'])
 
     if 'cbowpos' == h_params.vect_model:
-        positions = Embedding(h_params.window_size * 2, h_params.embed_size)(inputs['positions'])
-        outputs = tf.keras.layers.multiply([outputs, positions], name='aligns')
+        positions = Embedding(
+            input_dim=h_params.window_size * 2,
+            output_dim=h_params.embed_size,
+            name='position_embedding')(inputs['positions'])
+        embeddings = tf.keras.layers.multiply([embeddings, positions], name='position_encoding')
 
     if h_params.vect_model in {'cbow', 'cbowpos'}:
-        outputs = Reduction('mean', name='contexts')(outputs)
+        embeddings = Reduction('mean', name='context_reduction')(embeddings)
 
-    if h_params.l2_scale >= 1.:
-        outputs = L2Scale(h_params.l2_scale)(outputs)
+    context_encoder = Model(inputs=list(inputs.values()), outputs=embeddings, name='context_encoder')
 
-    return Model(inputs=list(inputs.values()), outputs=outputs, name='encoder')
+    return context_encoder, unit_encoder
 
 
-def _encoder_inputs(h_params):
-    shape_dims = (h_params.vect_model in {'cbow', 'cbowpos'}) + int('ngram' == h_params.input_unit)
+def _context_inputs(h_params):
+    has_context = int(h_params.vect_model in {'cbow', 'cbowpos'})
     inputs = {
-        'inputs': Input(
-            name='inputs',
-            shape=(None,) * shape_dims,
+        'units': Input(
+            name='units',
+            shape=(None,) * int(has_context),
             dtype=tf.string,
-            ragged='skipgram' != h_params.vect_model)
+            ragged=has_context)
     }
 
     if 'cbowpos' == h_params.vect_model:
@@ -80,17 +80,50 @@ def _encoder_inputs(h_params):
     return inputs
 
 
-def _encoder_vectorization(h_params, unit_vocab):
+def _unit_encoder(h_params, unit_vocab):
+    inputs = Input(name='units', shape=(), dtype=tf.string)
+
+    units = inputs
+    if 'ngram' == h_params.input_unit:
+        units = Lambda(_expand_ngrams(h_params), name='ngram_expansion')(units)
+
     unit_top, _ = unit_vocab.split_by_frequency(h_params.unit_freq)
     unit_keys = unit_top.tokens()
-    vectorization = StringLookup(vocabulary=unit_keys, mask_token=None, name='lookup')
+    lookup = StringLookup(
+        vocabulary=unit_keys,
+        mask_token=None,
+        oov_token=UNK_MARK,
+        name='unit_lookup')
+    indexes = lookup(units)
 
-    return vectorization, len(unit_keys) + 1  # + [UNK]
-
-
-def _encoder_embedding(h_params, input_dim):
     if 'adapt' == h_params.embed_type:
-        return AdaptiveEmbedding(h_params.aemb_cutoff, input_dim, h_params.embed_size, h_params.aemb_factor)
+        embed = AdaptiveEmbedding(
+            cutoff=h_params.aemb_cutoff,
+            input_dim=lookup.vocab_size(),
+            output_dim=h_params.embed_size,
+            factor=h_params.aemb_factor,
+            name='unit_embedding')
     else:
         with tf.device('/CPU:0'):
-            return Embedding(input_dim, h_params.embed_size)
+            embed = Embedding(
+                input_dim=lookup.vocab_size(),
+                output_dim=h_params.embed_size,
+                name='unit_embedding')
+    embeddings = embed(indexes)
+
+    if 'ngram' == h_params.input_unit:
+        embeddings = Reduction(h_params.ngram_comb, name='ngram_reduction')(embeddings)
+
+    return Model(inputs=inputs, outputs=embeddings, name='unit_encoder')
+
+
+def _expand_ngrams(h_params):
+    # Required to drop fn dependency to h_params
+    ngram_minn, ngram_maxn, ngram_self = h_params.ngram_minn, h_params.ngram_maxn, h_params.ngram_self
+
+    def fn(units):
+        units = wrap_with(units, '<', '>', skip=RESERVED)
+        units = char_ngrams(units, ngram_minn, ngram_maxn, ngram_self, skip=RESERVED)
+        return units
+
+    return fn

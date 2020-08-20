@@ -6,7 +6,7 @@ import os
 import tensorflow as tf
 from nlpvocab import Vocabulary
 from tfmiss.preprocessing import skip_gram, cont_bow, down_sample
-from tfmiss.text import normalize_unicode, zero_digits, split_chars, lower_case, wrap_with, char_ngrams
+from tfmiss.text import normalize_unicode, zero_digits, split_chars, lower_case
 from tfmiss.training import estimate_bucket_pipeline
 
 BOS_MARK = '[BOS]'
@@ -18,13 +18,23 @@ RESERVED = [BOS_MARK, EOS_MARK, UNK_MARK]
 def train_dataset(src_path, h_params, label_vocab):
     label_table, label_last = _label_lookup(label_vocab, h_params)
 
-    def _transform_train(sentences):
+    def _pre_transform(sentences):
         units = _transform_split(sentences, h_params)
-        units = _down_sample(units, h_params, label_vocab)
+        units = down_sample(
+            source=units,
+            freq_vocab=label_vocab,
+            threshold=h_params.samp_thold,
+            min_freq=h_params.label_freq)
         features, labels = _transform_model(units, h_params)
 
         labels = label_table.lookup(labels)
         features['filters'] = tf.not_equal(labels, label_last)
+
+        return features, labels
+
+    def _post_transform(features, labels):
+        features.pop('filters', None)
+        features.pop('lengths', None)
 
         if 'sm' == h_params.model_head:
             return features, labels
@@ -34,45 +44,9 @@ def train_dataset(src_path, h_params, label_vocab):
         return features
 
     dataset = _raw_dataset(src_path, h_params)
-    dataset = dataset.map(_transform_train, tf.data.experimental.AUTOTUNE)
-    dataset = dataset.shuffle(h_params.batch_size * 100)
-    dataset = _rebatch_dataset(dataset, h_params, filter_key='filters')
-
-    return dataset
-
-
-def vocab_dataset(src_path, h_params):
-    def _transform_vocab(sentences):
-        units = _transform_split(sentences, h_params)
-        features, labels = _transform_model(units, h_params)
-
-        return features, labels
-
-    dataset = _raw_dataset(src_path, h_params)
-    dataset = dataset.map(_transform_vocab, tf.data.experimental.AUTOTUNE)
-    dataset = _rebatch_dataset(dataset, h_params)
-
-    return dataset
-
-
-def _raw_dataset(src_path, h_params):
-    wild_card = os.path.join(src_path, '*.txt.gz')
-    dataset = tf.data.Dataset.list_files(wild_card)
-
-    dataset = dataset.interleave(
-        lambda gz_file: _line_datset(gz_file, h_params),
-        cycle_length=tf.data.experimental.AUTOTUNE,
-        num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dataset = dataset.batch(h_params.batch_size)
-
-    return dataset
-
-
-def _rebatch_dataset(dataset, h_params, filter_key=None):
+    dataset = dataset.map(_pre_transform, tf.data.experimental.AUTOTUNE)
     dataset = dataset.unbatch()
-
-    if filter_key is not None:
-        dataset = dataset.filter(lambda features, *args: features[filter_key])
+    dataset = dataset.filter(lambda features, *args: features['filters'])
 
     if h_params.vect_model in {'cbow', 'cbowpos'} and h_params.bucket_cbow:
         buck_bounds = list(range(2, h_params.window_size * 2 + 2))
@@ -86,18 +60,33 @@ def _rebatch_dataset(dataset, h_params, filter_key=None):
     else:
         dataset = dataset.batch(h_params.batch_size)
 
-    def _drop_unused(features, labels=None):
-        features.pop('filters', None)
-        features.pop('lengths', None)
+    dataset = dataset.map(_post_transform, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    dataset = dataset.shuffle(100)
+    dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
-        if labels is None:
-            return features
+    return dataset
 
-        return features, labels
 
-    dataset = dataset.map(_drop_unused, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+def vocab_dataset(src_path, h_params):
+    def _transform(sentences):
+        return _transform_split(sentences, h_params)
 
+    dataset = _raw_dataset(src_path, h_params)
+    dataset = dataset.map(_transform, tf.data.experimental.AUTOTUNE)
     dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+
+    return dataset
+
+
+def _raw_dataset(src_path, h_params):
+    wild_card = os.path.join(src_path, '*.txt.gz')
+    fileset = tf.data.Dataset.list_files(wild_card)
+
+    dataset = fileset.interleave(
+        lambda gz_file: _line_datset(gz_file, h_params),
+        cycle_length=tf.data.experimental.AUTOTUNE,
+        num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    dataset = dataset.batch(h_params.batch_size)
 
     return dataset
 
@@ -136,13 +125,6 @@ def _transform_split(sentences, h_params):
     return units
 
 
-def _down_sample(units, h_params, label_vocab=None):
-    min_freq = 0 if 'ngram' == h_params.input_unit else h_params.label_freq
-    units = down_sample(units, label_vocab, threshold=h_params.samp_thold, min_freq=min_freq)
-
-    return units
-
-
 def _transform_model(units, h_params):
     features = {}
     if h_params.vect_model in {'cbow', 'cbowpos'}:
@@ -162,11 +144,6 @@ def _transform_model(units, h_params):
             features['positions'] = positions
     else:
         targets, contexts = skip_gram(units, h_params.window_size)
-
-    if 'ngram' == h_params.input_unit:
-        contexts = wrap_with(contexts, '<', '>', skip=RESERVED)
-        contexts = char_ngrams(contexts, h_params.ngram_minn, h_params.ngram_maxn,
-                               h_params.ngram_self, skip=RESERVED)
 
     features['units'] = contexts
 
