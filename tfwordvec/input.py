@@ -45,6 +45,7 @@ def train_dataset(src_path, h_params, label_vocab):
 
     dataset = _raw_dataset(src_path, h_params)
     dataset = dataset.map(_pre_transform, tf.data.experimental.AUTOTUNE)
+    dataset = dataset.shuffle(100)
     dataset = dataset.unbatch()
     dataset = dataset.filter(lambda features, *args: features['filters'])
 
@@ -61,7 +62,6 @@ def train_dataset(src_path, h_params, label_vocab):
         dataset = dataset.batch(h_params.batch_size)
 
     dataset = dataset.map(_post_transform, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dataset = dataset.shuffle(100)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     return dataset

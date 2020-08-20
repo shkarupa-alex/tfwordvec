@@ -83,15 +83,15 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(sorted(features.keys()), ['labels', 'positions', 'units'])
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [2, None])
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
             self.assertEqual(features['units'].dtype, tf.string)
 
             self.assertTrue(tf.is_tensor(features['labels']))
-            self.assertListEqual(features['labels'].shape.as_list(), [2])
+            self.assertListEqual(features['labels'].shape.as_list(), [8])
             self.assertEqual(features['labels'].dtype, tf.int64)
 
             self.assertIsInstance(features['positions'], tf.RaggedTensor)
-            self.assertListEqual(features['positions'].shape.as_list(), [2, None])
+            self.assertListEqual(features['positions'].shape.as_list(), [8, None])
             self.assertEqual(features['positions'].dtype, tf.int32)
 
     def test_word_skipgram_asm_lower(self):
