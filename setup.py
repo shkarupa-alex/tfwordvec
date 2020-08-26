@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from setuptools import setup, find_packages
 
-__VERSION__ = '0.1.0'
+__VERSION__ = '1.0.0'
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
@@ -22,13 +22,13 @@ setup(
     packages=find_packages(),
     python_requires='>=3.6.0',
     install_requires=[
-        'tensorflow>=2.2.0',
-        'tensorflow-addons>=0.9.1',
-        'tfmiss>=0.6.0',
+        'tensorflow>=2.3.0',
+        'tensorflow-addons>=0.11.1',
+        'tfmiss>=0.7.4',
         'nlpvocab>=1.2.0',
     ],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest'],
+    tests_require=['pytest', 'tensorflow-hub>=0.9.0'],
     entry_points={
         'console_scripts': [
             'tfwordvec-vocab=tfwordvec.vocab:main',

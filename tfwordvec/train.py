@@ -27,8 +27,8 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     if h_params.use_jit:
         os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit'
         # tf.config.optimizer.set_jit(True)
-        # TODO tf.config.optimizer.set_experimental_options()
 
+    old_policy = tf.keras.mixed_precision.experimental.global_policy()
     if h_params.mixed_fp16:
         tf.keras.mixed_precision.experimental.set_policy('mixed_float16')
 
@@ -38,8 +38,14 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     else:
         lr_finder = None
         callbacks = [
-            tf.keras.callbacks.TensorBoard(os.path.join(model_path, 'logs'), update_freq=100, profile_batch='140, 160'),
-            tf.keras.callbacks.ModelCheckpoint(os.path.join(model_path, 'train'), monitor='loss', verbose=True)
+            tf.keras.callbacks.TensorBoard(
+                os.path.join(model_path, 'logs'),
+                update_freq=100,
+                profile_batch='140, 160'),
+            tf.keras.callbacks.ModelCheckpoint(
+                os.path.join(model_path, 'train'),
+                monitor='loss',
+                verbose=True)
         ]
 
     if 'ranger' == h_params.train_optim.lower():
@@ -49,13 +55,18 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
         tf.keras.backend.set_value(optimizer.lr, h_params.learn_rate)
 
     dataset = train_dataset(data_path, h_params, label_vocab)
-    model, encoder = build_model(h_params, unit_vocab, label_vocab)
-    model.compile(
-        optimizer=optimizer,
-        loss='sparse_categorical_crossentropy' if 'sm' == h_params.model_head else None,
-        run_eagerly=findlr_steps > 0
-    )
+
+    if os.path.isdir(os.path.join(model_path, 'train')):
+        model = tf.keras.models.load_model()
+    else:
+        model = build_model(h_params, unit_vocab, label_vocab)
+        model.compile(
+            optimizer=optimizer,
+            loss='sparse_categorical_crossentropy' if 'sm' == h_params.model_head else None,
+            run_eagerly=findlr_steps > 0
+        )
     model.summary()
+
     model.fit(
         dataset,
         epochs=1 if findlr_steps > 0 else h_params.num_epochs,
@@ -66,8 +77,9 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     if findlr_steps > 0:
         best_lr = lr_finder.plot()
         tf.get_logger().info('Best lr should be near: {}'.format(best_lr))
-    else:
-        tf.saved_model.save(encoder, os.path.join(model_path, 'export'))
+
+    if h_params.mixed_fp16:
+        tf.keras.mixed_precision.experimental.set_policy(old_policy)
 
 
 def main():

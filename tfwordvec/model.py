@@ -5,12 +5,11 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input
-from tensorflow.keras.layers import Activation, Dense, Embedding, Lambda
+from tensorflow.keras.layers import Activation, Dense, Embedding
 from tensorflow.keras.layers.experimental.preprocessing import StringLookup
 from tfmiss.keras.layers import AdaptiveEmbedding, AdaptiveSoftmax, NoiseContrastiveEstimation, SampledSofmax
-from tfmiss.text import wrap_with, char_ngrams
-from .input import UNK_MARK, RESERVED
-from .layer import Reduction, MapFlat
+from .input import UNK_MARK
+from .layer import ExpandNgams, MapFlat, Reduction
 
 
 def build_model(h_params, unit_vocab, label_vocab):
@@ -18,8 +17,8 @@ def build_model(h_params, unit_vocab, label_vocab):
     num_labels = len(top_labels)
 
     inputs = _context_inputs(h_params)
-    context_encoder, unit_encoder = _build_encoders(h_params, unit_vocab)
-    logits = context_encoder(inputs)
+    encoder = _build_encoder(h_params, unit_vocab)
+    logits = encoder(inputs)
 
     if 'sm' != h_params.model_head:
         # Add labels input after encoder call to bypass "ignoring input" warning
@@ -40,14 +39,14 @@ def build_model(h_params, unit_vocab, label_vocab):
 
     model = Model(inputs=list(inputs.values()), outputs=probs, name='trainer')
 
-    return model, context_encoder, unit_encoder
+    return model
 
 
-def _build_encoders(h_params, unit_vocab):
+def _build_encoder(h_params, unit_vocab):
     inputs = _context_inputs(h_params)
 
-    unit_encoder = _unit_encoder(h_params, unit_vocab)
-    embeddings = MapFlat(unit_encoder, name='unit_encoding')(inputs['units'])
+    encoder = _unit_encoder(h_params, unit_vocab)
+    embeddings = MapFlat(encoder, name='unit_encoding')(inputs['units'])
 
     if 'cbowpos' == h_params.vect_model:
         positions = Embedding(
@@ -59,9 +58,7 @@ def _build_encoders(h_params, unit_vocab):
     if h_params.vect_model in {'cbow', 'cbowpos'}:
         embeddings = Reduction('mean', name='context_reduction')(embeddings)
 
-    context_encoder = Model(inputs=list(inputs.values()), outputs=embeddings, name='context_encoder')
-
-    return context_encoder, unit_encoder
+    return Model(inputs=list(inputs.values()), outputs=embeddings, name='context_encoder')
 
 
 def _context_inputs(h_params):
@@ -85,7 +82,11 @@ def _unit_encoder(h_params, unit_vocab):
 
     units = inputs
     if 'ngram' == h_params.input_unit:
-        units = Lambda(_expand_ngrams(h_params), name='ngram_expansion')(units)
+        units = ExpandNgams(
+            ngram_minn=h_params.ngram_minn,
+            ngram_maxn=h_params.ngram_maxn,
+            ngram_self=h_params.ngram_self,
+            name='ngram_expansion')(units)
 
     unit_top, _ = unit_vocab.split_by_frequency(h_params.unit_freq)
     unit_keys = unit_top.tokens()
@@ -115,15 +116,3 @@ def _unit_encoder(h_params, unit_vocab):
         embeddings = Reduction(h_params.ngram_comb, name='ngram_reduction')(embeddings)
 
     return Model(inputs=inputs, outputs=embeddings, name='unit_encoder')
-
-
-def _expand_ngrams(h_params):
-    # Required to drop fn dependency to h_params
-    ngram_minn, ngram_maxn, ngram_self = h_params.ngram_minn, h_params.ngram_maxn, h_params.ngram_self
-
-    def fn(units):
-        units = wrap_with(units, '<', '>', skip=RESERVED)
-        units = char_ngrams(units, ngram_minn, ngram_maxn, ngram_self, skip=RESERVED)
-        return units
-
-    return fn
