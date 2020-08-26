@@ -1,0 +1,21 @@
+{
+  "input_unit": "ngram",
+  "zero_digits": true,
+  "unit_freq": 25,
+  "label_freq": 10,
+  "ngram_minn": 3,
+  "ngram_maxn": 5,
+  "ngram_self": "always",
+  "ngram_comb": "mean",
+  "vect_model": "cbowpos",
+  "window_size": 5,
+  "embed_size": 256,
+  "samp_thold": 1e-2,
+  "model_head": "ss",
+  "neg_samp": 5,
+  "batch_size": 200,
+  "bucket_cbow": true,
+  "num_epochs": 2,
+  "train_optim": "Adam",
+  "learn_rate": 0.05
+}

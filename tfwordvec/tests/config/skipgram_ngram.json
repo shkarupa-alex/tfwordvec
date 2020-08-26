@@ -1,0 +1,10 @@
+{
+  "input_unit": "ngram",
+  "unit_freq": 16,
+  "label_freq": 4,
+  "vect_model": "skipgram",
+  "window_size": 5,
+  "samp_thold": 1e-1,
+  "model_head": "sm",
+  "num_epochs": 1
+}
