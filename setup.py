@@ -33,6 +33,7 @@ setup(
         'console_scripts': [
             'tfwordvec-vocab=tfwordvec.vocab:main',
             'tfwordvec-train=tfwordvec.train:main',
+            'tfwordvec-hub=tfwordvec.hub:main',
         ],
     },
     classifiers=[
