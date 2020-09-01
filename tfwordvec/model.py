@@ -8,8 +8,9 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Activation, Dense, Embedding
 from tensorflow.keras.layers.experimental.preprocessing import StringLookup
 from tfmiss.keras.layers import AdaptiveEmbedding, AdaptiveSoftmax, NoiseContrastiveEstimation, SampledSofmax
-from .input import UNK_MARK
-from .layer import ExpandNgams, MapFlat, Reduction
+from tfmiss.keras.layers import CharNgams, L2Scale, Reduction
+from .input import UNK_MARK, RESERVED
+from .layer import MapFlat
 
 
 def build_model(h_params, unit_vocab, label_vocab):
@@ -82,10 +83,11 @@ def _unit_encoder(h_params, unit_vocab):
 
     units = inputs
     if 'ngram' == h_params.input_unit:
-        units = ExpandNgams(
-            ngram_minn=h_params.ngram_minn,
-            ngram_maxn=h_params.ngram_maxn,
-            ngram_self=h_params.ngram_self,
+        units = CharNgams(
+            minn=h_params.ngram_minn,
+            maxn=h_params.ngram_maxn,
+            itself=h_params.ngram_self,
+            reserved=RESERVED,
             name='ngram_expansion')(units)
 
     unit_top, _ = unit_vocab.split_by_frequency(h_params.unit_freq)
@@ -114,5 +116,8 @@ def _unit_encoder(h_params, unit_vocab):
 
     if 'ngram' == h_params.input_unit:
         embeddings = Reduction(h_params.ngram_comb, name='ngram_reduction')(embeddings)
+
+    if h_params.l2_scale > 1.:
+        embeddings = L2Scale(h_params.l2_scale, name='scale')(embeddings)
 
     return Model(inputs=inputs, outputs=embeddings, name='unit_encoder')

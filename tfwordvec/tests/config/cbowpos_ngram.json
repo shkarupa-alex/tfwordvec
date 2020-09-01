@@ -6,6 +6,7 @@
   "vect_model": "cbowpos",
   "embed_type": "adapt",
   "aemb_cutoff": [2, 4],
+  "l2_scale": 20.0,
   "window_size": 5,
   "samp_thold": 1e-1,
   "model_head": "ss",
