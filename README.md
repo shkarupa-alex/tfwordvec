@@ -23,12 +23,16 @@ Vocabularies are stored within dataset directory.
 Use `tfwordvec-train` to train model with your config, data and vocabularies.
 
 # Hub
-After model was trained, you can export encoder part to `SavedModel` format for using with `tensorflow_hub.KerasLayer`.
+After model was trained, using `tfwordvec-hub` command you can export encoder part to `SavedModel` format for using 
+with `tensorflow_hub.KerasLayer`. 
 See `tfwordvec/tests/test_hub.py` for example.
 
+# Export
+Use `tfwordvec-export` to export `SavedModel` from hub to binary format.
+
 # Evaluation
-In-package evaluation scripts unavailable for now.
-But some common datasets can be found in `datasets` directory.
+In-package evaluation scripts unavailable for now. Use exported model and original tools.
+Some common datasets can be found in `datasets` directory.
 
 More evaluation datasets can be found here:
 - https://russe.nlpub.org/task/

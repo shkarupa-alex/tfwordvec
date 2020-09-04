@@ -59,8 +59,8 @@ def main():
         help='Path to save model')
 
     argv, _ = parser.parse_known_args()
-    if not os.path.exists(argv.data_path) or not os.path.isdir(argv.data_path):
-        raise IOError('Wrong data path')
+    if not os.path.exists(argv.model_path) or not os.path.isdir(argv.model_path):
+        raise IOError('Wrong model path')
 
     params_path = argv.params_path.name
     argv.params_path.close()
