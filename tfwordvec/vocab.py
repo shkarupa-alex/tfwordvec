@@ -9,9 +9,9 @@ import numpy as np
 import os
 import tensorflow as tf
 from nlpvocab import Vocabulary
-from .input import vocab_dataset
+from tfmiss.keras.layers import CharNgams
+from .input import vocab_dataset, RESERVED
 from .hparam import build_hparams
-from .layer import ExpandNgams
 
 
 def extract_vocab(data_path, h_params):
@@ -28,10 +28,11 @@ def extract_vocab(data_path, h_params):
     unit_vocab = Vocabulary()
     if 'ngram' == h_params.input_unit:
         labels = tf.constant(label_vocab.tokens(), dtype=tf.string)
-        ngrams = ExpandNgams(
-            ngram_minn=h_params.ngram_minn,
-            ngram_maxn=h_params.ngram_maxn,
-            ngram_self=h_params.ngram_self)(labels)
+        ngrams = CharNgams(
+            minn=h_params.ngram_minn,
+            maxn=h_params.ngram_maxn,
+            itself=h_params.ngram_self,
+            reserved=RESERVED)(labels)
         for label, ngram in zip(label_vocab.tokens(), ngrams):
             ngram = _unicode_tensor(ngram).reshape([-1])
             for n in ngram:

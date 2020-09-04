@@ -29,7 +29,8 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
-        embed(['Abc012'])
+        vectors = embed(['A', 'b']).numpy()
+        self.assertTupleEqual((2, 256), vectors.shape)
 
     def test_word_skipgram(self):
         train_model(self.data_dir, os.path.join(self.params_dir, 'skipgram_word.json'), self.model_dir)
@@ -51,7 +52,8 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
-        embed(['Abc012'])
+        vectors = embed(['Abc012', 'def']).numpy()
+        self.assertTupleEqual((2, 256), vectors.shape)
 
     def test_char_cbow(self):
         train_model(self.data_dir, os.path.join(self.params_dir, 'cbow_char.json'), self.model_dir)
@@ -60,7 +62,8 @@ class TestExportEncoders(tf.test.TestCase):
         # self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
-        embed(['Abc012'])
+        vectors = embed(['A', 'b']).numpy()
+        self.assertTupleEqual((2, 256), vectors.shape)
 
     def test_word_cbow(self):
         train_model(self.data_dir, os.path.join(self.params_dir, 'cbow_word.json'), self.model_dir)
@@ -69,7 +72,8 @@ class TestExportEncoders(tf.test.TestCase):
         # self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
-        embed(['Abc012'])
+        vectors = embed(['Abc012', 'def']).numpy()
+        self.assertTupleEqual((2, 256), vectors.shape)
 
     def test_ngram_cbow(self):
         train_model(self.data_dir, os.path.join(self.params_dir, 'cbow_ngram.json'), self.model_dir)
@@ -78,7 +82,8 @@ class TestExportEncoders(tf.test.TestCase):
         # self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
-        embed(['Abc012'])
+        vectors = embed(['Abc012', 'def']).numpy()
+        self.assertTupleEqual((2, 256), vectors.shape)
 
     def test_char_cbowpos(self):
         train_model(self.data_dir, os.path.join(self.params_dir, 'cbowpos_char.json'), self.model_dir)
@@ -87,7 +92,8 @@ class TestExportEncoders(tf.test.TestCase):
         # self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
-        embed(['Abc012'])
+        vectors = embed(['A', 'b']).numpy()
+        self.assertTupleEqual((2, 256), vectors.shape)
 
     def test_word_cbowpos(self):
         train_model(self.data_dir, os.path.join(self.params_dir, 'cbowpos_word.json'), self.model_dir)
@@ -96,7 +102,8 @@ class TestExportEncoders(tf.test.TestCase):
         # self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
-        embed(['Abc012'])
+        vectors = embed(['Abc012', 'def']).numpy()
+        self.assertTupleEqual((2, 256), vectors.shape)
 
     def test_ngram_cbowpos(self):
         train_model(self.data_dir, os.path.join(self.params_dir, 'cbowpos_ngram.json'), self.model_dir)
@@ -105,7 +112,8 @@ class TestExportEncoders(tf.test.TestCase):
         # self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
-        embed(['Abc012'])
+        vectors = embed(['Abc012', 'def']).numpy()
+        self.assertTupleEqual((2, 256), vectors.shape)
 
 
 if __name__ == "__main__":

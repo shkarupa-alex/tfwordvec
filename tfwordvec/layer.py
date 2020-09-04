@@ -4,45 +4,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow.keras.layers import InputSpec, Layer, Wrapper
-from tensorflow.python.keras.layers.preprocessing.reduction import Reduction as _Reduction
 from tensorflow.python.keras.utils import tf_utils
-from tfmiss.text import wrap_with, char_ngrams, normalize_unicode, lower_case, zero_digits
-from tfmiss.preprocessing import cbow_infer
-from .input import BOS_MARK, EOS_MARK, UNK_MARK, RESERVED
-
-
-@tf.keras.utils.register_keras_serializable(package='WordVec')
-class ExpandNgams(Layer):
-    def __init__(self, ngram_minn, ngram_maxn, ngram_self, reserved=RESERVED, *args, **kwargs):
-        super(ExpandNgams, self).__init__(*args, **kwargs)
-        self.input_spec = InputSpec(dtype='string')
-        self._supports_ragged_inputs = True
-
-        self.ngram_minn = ngram_minn
-        self.ngram_maxn = ngram_maxn
-        self.ngram_self = ngram_self
-        self.reserved = reserved
-
-    def call(self, inputs, **kwargs):
-        outputs = wrap_with(inputs, '<', '>', skip=self.reserved)
-        outputs = char_ngrams(outputs, self.ngram_minn, self.ngram_maxn, self.ngram_self, skip=self.reserved)
-
-        return outputs
-
-    @tf_utils.shape_type_conversion
-    def compute_output_shape(self, input_shape):
-        return input_shape + (None,)
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'ngram_minn': self.ngram_minn,
-            'ngram_maxn': self.ngram_maxn,
-            'ngram_self': self.ngram_self,
-            'reserved': self.reserved
-        })
-
-        return config
+from tfmiss.text import normalize_unicode, lower_case, zero_digits
+from tfmiss.preprocessing import cbow_context
+from .input import BOS_MARK, EOS_MARK, UNK_MARK
 
 
 @tf.keras.utils.register_keras_serializable(package='WordVec')
@@ -57,26 +22,6 @@ class MapFlat(Wrapper):
     @tf_utils.shape_type_conversion
     def compute_output_shape(self, input_shape):
         return input_shape + self.layer.compute_output_shape([None])[1:]
-
-
-@tf.keras.utils.register_keras_serializable(package='WordVec')
-class Reduction(_Reduction):
-    def __init__(self, *args, **kwargs):
-        super(Reduction, self).__init__(*args, **kwargs)
-        self._supports_ragged_inputs = True
-
-    @tf_utils.shape_type_conversion
-    def compute_output_shape(self, input_shape):
-        return input_shape[:self.axis] + input_shape[self.axis + 1:]
-
-    def get_config(self):
-        config = super(Reduction, self).get_config()
-        config.update({
-            'reduction': self.reduction,
-            'axis': self.axis,
-        })
-
-        return config
 
 
 @tf.keras.utils.register_keras_serializable(package='WordVec')
@@ -131,7 +76,7 @@ class CbowContext(Wrapper):
         sources = tf.concat([bos, inputs, eos], axis=1)
 
         features = {}
-        outputs, positions = cbow_infer(sources, self.window, UNK_MARK)
+        outputs, positions = cbow_context(sources, self.window, UNK_MARK)
         if self.position:
             positions = tf.ragged.map_flat_values(
                 lambda flat: tf.where(

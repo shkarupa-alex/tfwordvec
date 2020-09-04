@@ -4,42 +4,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow.python.keras import keras_parameterized, testing_utils
-from ..layer import ExpandNgams, MapFlat, Reduction, NormalizeUnits, CbowContext
-
-
-@keras_parameterized.run_all_keras_modes
-class ExpandNgamsTest(keras_parameterized.TestCase):
-    def test_layer(self):
-        # Fails within model.predict
-        # testing_utils.layer_test(
-        #     ExpandNgams,
-        #     kwargs={'ngram_minn': 2, 'ngram_maxn': 4, 'ngram_self': 'alone'},
-        #     input_data=np.array([
-        #         ['abc', 'defg', 'hi'],
-        #         ['a', 'bcdef', 'ghi'],
-        #         ['abc', 'defg', 'hi'],
-        #         ['a', 'bcdef', 'ghi'],
-        #     ]).astype('str'),
-        #     input_shape=(4, 3),
-        #     expected_output_dtype='string',
-        #     # expected_output_shape=(None, 3, None)
-        # )
-        pass
-
-    def test_output(self):
-        inputs = tf.constant([
-            ['abc', 'defg', 'hi'],
-            ['a', 'bcdef', 'ghi'],
-            ['abc', 'defg', 'hi'],
-            ['a', 'bcdef', 'ghi'],
-        ], dtype=tf.string)
-        layer = ExpandNgams(ngram_minn=2, ngram_maxn=4, ngram_self='alone')
-        outputs = layer(inputs)
-        self.assertListEqual([4, 3, None], outputs.shape.as_list())
-        self.assertEqual(tf.string, outputs.dtype)
-
-        outputs = self.evaluate(outputs)
-        self.assertTupleEqual((4, None, None), outputs.shape)
+from ..layer import MapFlat, NormalizeUnits, CbowContext
 
 
 @keras_parameterized.run_all_keras_modes
@@ -52,19 +17,6 @@ class MapFlatTest(keras_parameterized.TestCase):
             input_dtype='float32',
             expected_output_dtype='float32',
             expected_output_shape=(None, 10, 2)
-        )
-
-
-@keras_parameterized.run_all_keras_modes
-class ReductionTest(keras_parameterized.TestCase):
-    def test_layer(self):
-        testing_utils.layer_test(
-            Reduction,
-            kwargs={'reduction': 'mean', 'axis': -2},
-            input_shape=(2, 10, 5),
-            input_dtype='float32',
-            expected_output_dtype='float32',
-            expected_output_shape=(None, 5)
         )
 
 

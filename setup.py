@@ -24,16 +24,19 @@ setup(
     install_requires=[
         'tensorflow>=2.3.0',
         'tensorflow-addons>=0.11.1',
-        'tfmiss>=0.7.4',
+        'tfmiss>=0.8.2',
         'nlpvocab>=1.2.0',
+        'tensorflow-hub>=0.9.0',
+        'gensim>=3.8.1'
     ],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest', 'tensorflow-hub>=0.9.0'],
+    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'tfwordvec-vocab=tfwordvec.vocab:main',
             'tfwordvec-train=tfwordvec.train:main',
             'tfwordvec-hub=tfwordvec.hub:main',
+            'tfwordvec-export=tfwordvec.export:main',
         ],
     },
     classifiers=[

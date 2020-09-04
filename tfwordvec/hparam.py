@@ -24,11 +24,12 @@ def build_hparams(custom):
 
         vect_model='cbow',  # or 'skipgram' or 'cbowpos'
         window_size=5,
+        samp_thold=1e-3,
         embed_size=256,
         embed_type='dense',  # or 'adapt'
         aemb_cutoff=[0],
         aemb_factor=4,
-        samp_thold=1e-3,
+        l2_scale=0.,
 
         model_head='ss',  # or 'nce' or 'asm' or 'sm'
         neg_samp=5,
@@ -74,6 +75,8 @@ def build_hparams(custom):
         raise ValueError('Unsupported vector model')
     if 0 >= params.window_size:
         raise ValueError('Bad window size')
+    if 0. >= params.samp_thold:
+        raise ValueError('Bad downsampling threshold')
     if 0 >= params.embed_size:
         raise ValueError('Bad embedding size')
     if params.embed_type not in {'dense', 'adapt'}:
@@ -82,8 +85,8 @@ def build_hparams(custom):
         raise ValueError('Bad adaptive embedding cutoff')
     if 'adapt' == params.embed_type and 0 >= params.aemb_factor:
         raise ValueError('Bad adaptive embedding factor')
-    if 0. >= params.samp_thold:
-        raise ValueError('Bad downsampling threshold')
+    if 0. > params.l2_scale:
+        raise ValueError('Bad l2 scale factor')
 
     if params.model_head not in {'ss', 'nce', 'asm', 'sm'}:
         raise ValueError('Unsupported softmax head')
