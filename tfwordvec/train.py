@@ -28,9 +28,9 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
         os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit'
         # tf.config.optimizer.set_jit(True)
 
-    old_policy = tf.keras.mixed_precision.experimental.global_policy()
+    old_policy = tf.keras.mixed_precision.global_policy()
     if h_params.mixed_fp16:
-        tf.keras.mixed_precision.experimental.set_policy('mixed_float16')
+        tf.keras.mixed_precision.set_global_policy('mixed_float16')
 
     if findlr_steps:
         lr_finder = LRFinder(findlr_steps)
@@ -45,7 +45,8 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
             tf.keras.callbacks.ModelCheckpoint(
                 os.path.join(model_path, 'train'),
                 monitor='loss',
-                verbose=True)
+                verbose=True,
+                options=tf.saved_model.SaveOptions(namespace_whitelist=['Miss']))
         ]
 
     if 'ranger' == h_params.train_optim.lower():
@@ -57,7 +58,7 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     dataset = train_dataset(data_path, h_params, label_vocab)
 
     if os.path.isdir(os.path.join(model_path, 'train')):
-        model = tf.keras.models.load_model()
+        model = tf.keras.models.load_model(os.path.join(model_path, 'train'))  # TODO: check
     else:
         model = build_model(h_params, unit_vocab, label_vocab)
         model.compile(
@@ -77,9 +78,6 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     if findlr_steps > 0:
         best_lr = lr_finder.plot()
         tf.get_logger().info('Best lr should be near: {}'.format(best_lr))
-
-    if h_params.mixed_fp16:
-        tf.keras.mixed_precision.experimental.set_policy(old_policy)
 
 
 def main():

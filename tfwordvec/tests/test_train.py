@@ -17,6 +17,10 @@ class TestTrainModel(tf.test.TestCase):
         self.data_dir = os.path.join(os.path.dirname(__file__), 'data')
         self.params_dir = os.path.join(os.path.dirname(__file__), 'config')
         self.model_dir = tempfile.mkdtemp()
+        self.default_policy = tf.keras.mixed_precision.global_policy()
+
+    def tearDown(self):
+        tf.keras.mixed_precision.set_global_policy(self.default_policy)
 
     def tearDown(self):
         shutil.rmtree(self.model_dir, ignore_errors=True)

@@ -44,7 +44,7 @@ def train_dataset(src_path, h_params, label_vocab):
         return features
 
     dataset = _raw_dataset(src_path, h_params)
-    dataset = dataset.map(_pre_transform, tf.data.experimental.AUTOTUNE)
+    dataset = dataset.map(_pre_transform, tf.data.AUTOTUNE)
     dataset = dataset.shuffle(100)
     dataset = dataset.unbatch()
     dataset = dataset.filter(lambda features, *args: features['filters'])
@@ -61,8 +61,8 @@ def train_dataset(src_path, h_params, label_vocab):
     else:
         dataset = dataset.batch(h_params.batch_size)
 
-    dataset = dataset.map(_post_transform, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    dataset = dataset.map(_post_transform, num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
 
     return dataset
 
@@ -72,8 +72,8 @@ def vocab_dataset(src_path, h_params):
         return _transform_split(sentences, h_params)
 
     dataset = _raw_dataset(src_path, h_params)
-    dataset = dataset.map(_transform, tf.data.experimental.AUTOTUNE)
-    dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+    dataset = dataset.map(_transform, tf.data.AUTOTUNE)
+    dataset = dataset.prefetch(tf.data.AUTOTUNE)
 
     return dataset
 
@@ -84,21 +84,23 @@ def _raw_dataset(src_path, h_params):
 
     dataset = fileset.interleave(
         lambda gz_file: _line_datset(gz_file, h_params),
-        cycle_length=tf.data.experimental.AUTOTUNE,
-        num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        cycle_length=tf.data.AUTOTUNE,
+        num_parallel_calls=tf.data.AUTOTUNE)
+
+    dataset = dataset.filter(lambda sentence: tf.strings.length(tf.strings.strip(sentence)) > 0)
     dataset = dataset.batch(h_params.batch_size)
 
     return dataset
 
 
 def _line_datset(gz_file, h_params):
-    dataset = tf.data.TextLineDataset(gz_file, 'GZIP', None, tf.data.experimental.AUTOTUNE)
+    dataset = tf.data.TextLineDataset(gz_file, 'GZIP', None, tf.data.AUTOTUNE)
 
     if 'char' == h_params.input_unit:
         dataset = dataset.batch(2)
         dataset = dataset.map(
             lambda rows: tf.strings.reduce_join(rows, separator='\n'),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            num_parallel_calls=tf.data.AUTOTUNE)
 
     return dataset
 

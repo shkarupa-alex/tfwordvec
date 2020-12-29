@@ -26,7 +26,10 @@ def export_encoder(params_path, model_path):
         zero=h_params.zero_digits)(unit_inputs)
     unit_outputs = unit_encoder(unit_outputs)
     unit_model = Model(inputs=unit_inputs, outputs=unit_outputs)
-    tf.saved_model.save(unit_model, os.path.join(model_path, 'unit_encoder'))
+    unit_model.save(
+        os.path.join(model_path, 'unit_encoder'),
+        options=tf.saved_model.SaveOptions(namespace_whitelist=['Miss'])
+    )
     tf.get_logger().info('Unit encoder saved to {}'.format(os.path.join(model_path, 'unit_encoder')))
 
     if h_params.vect_model in {'cbow', 'cbowpos'}:

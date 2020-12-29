@@ -25,6 +25,9 @@ def extract_vocab(data_path, h_params):
         labels = _unicode_tensor(labels.flat_values)
         label_vocab.update(labels)
 
+    if label_vocab[''] > 0:
+        raise ValueError('Something went wrong. Empty label found.')
+
     unit_vocab = Vocabulary()
     if 'ngram' == h_params.input_unit:
         labels = tf.constant(label_vocab.tokens(), dtype=tf.string)

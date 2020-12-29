@@ -22,11 +22,11 @@ setup(
     packages=find_packages(),
     python_requires='>=3.6.0',
     install_requires=[
-        'tensorflow>=2.3.0',
-        'tensorflow-addons>=0.11.1',
-        'tfmiss>=0.8.2',
+        'tensorflow>=2.4.0',
+        'tensorflow-addons>=0.12.0',
+        'tfmiss>=0.9.1',
         'nlpvocab>=1.2.0',
-        'tensorflow-hub>=0.9.0',
+        'tensorflow-hub>=0.10.0',
         'gensim>=3.8.1'
     ],
     setup_requires=['pytest-runner'],
