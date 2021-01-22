@@ -12,6 +12,7 @@ from ..input import train_dataset, vocab_dataset
 
 class TestTrainDataset(tf.test.TestCase):
     def setUp(self):
+        super().setUp()
         np.random.seed(1)
         tf.random.set_seed(1)
         self.data_dir = os.path.join(os.path.dirname(__file__), 'data')

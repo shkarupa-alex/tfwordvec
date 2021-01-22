@@ -22,9 +22,9 @@ setup(
     packages=find_packages(),
     python_requires='>=3.6.0',
     install_requires=[
-        'tensorflow>=2.4.0',
+        'tensorflow>=2.4.1',
         'tensorflow-addons>=0.12.0',
-        'tfmiss>=0.9.1',
+        'tfmiss>=0.10.0',
         'nlpvocab>=1.2.0',
         'tensorflow-hub>=0.10.0',
         'gensim>=3.8.1'

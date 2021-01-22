@@ -20,15 +20,10 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     with open(params_path, 'r') as f:
         h_params = build_hparams(json.loads(f.read()))
 
-    unit_path, label_path = vocab_names(data_path, h_params)
-    unit_vocab = Vocabulary.load(unit_path)
-    label_vocab = Vocabulary.load(label_path)
-
     if h_params.use_jit:
         os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit'
-        # tf.config.optimizer.set_jit(True)
+        tf.config.optimizer.set_jit(True)
 
-    old_policy = tf.keras.mixed_precision.global_policy()
     if h_params.mixed_fp16:
         tf.keras.mixed_precision.set_global_policy('mixed_float16')
 
@@ -55,6 +50,9 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
         optimizer = tf.keras.optimizers.get(h_params.train_optim)
         tf.keras.backend.set_value(optimizer.lr, h_params.learn_rate)
 
+    unit_path, label_path = vocab_names(data_path, h_params)
+    unit_vocab = Vocabulary.load(unit_path)
+    label_vocab = Vocabulary.load(label_path)
     dataset = train_dataset(data_path, h_params, label_vocab)
 
     if os.path.isdir(os.path.join(model_path, 'train')):
@@ -66,8 +64,8 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
             loss='sparse_categorical_crossentropy' if 'sm' == h_params.model_head else None,
             run_eagerly=findlr_steps > 0
         )
-    model.summary()
 
+    model.summary()
     model.fit(
         dataset,
         epochs=1 if findlr_steps > 0 else h_params.num_epochs,
@@ -76,7 +74,7 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     )
 
     if findlr_steps > 0:
-        best_lr = lr_finder.plot()
+        best_lr, _ = lr_finder.plot()
         tf.get_logger().info('Best lr should be near: {}'.format(best_lr))
 
 

@@ -57,6 +57,10 @@ def main():
     if not os.path.exists(argv.model_path) or not os.path.isdir(argv.model_path):
         raise IOError('Wrong model path')
 
+    unit_path = os.path.join(model_path, 'unit_encoder')
+    if not os.path.exists(unit_path) or not os.path.isdir(unit_path):
+        raise IOError('Unit encoder not found. Did you export model to TFHub?')
+
     params_path = argv.params_path.name
     argv.params_path.close()
 

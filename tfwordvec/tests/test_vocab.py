@@ -12,6 +12,7 @@ from ..vocab import extract_vocab
 
 class TestExtractVocab(tf.test.TestCase):
     def setUp(self):
+        super().setUp()
         np.random.seed(1)
         tf.random.set_seed(2)
         self.data_dir = os.path.join(os.path.dirname(__file__), 'data')
