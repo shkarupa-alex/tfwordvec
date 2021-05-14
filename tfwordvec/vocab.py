@@ -1,23 +1,15 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import argparse
-import json
 import logging
 import numpy as np
 import os
 import tensorflow as tf
 from nlpvocab import Vocabulary
 from tfmiss.keras.layers import CharNgams
-from .input import vocab_dataset, RESERVED
+from .input import RESERVED, vocab_dataset
 from .hparam import build_hparams
 
 
 def extract_vocab(data_path, h_params):
-    if not tf.executing_eagerly():
-        raise EnvironmentError('Eager mode should be enabled by default')
-
     label_vocab = Vocabulary()
     dataset = vocab_dataset(data_path, h_params)
 
@@ -46,12 +38,12 @@ def extract_vocab(data_path, h_params):
     return unit_vocab, label_vocab
 
 
-def vocab_names(data_path, h_params, format=Vocabulary.FORMAT_BINARY_PICKLE):
+def vocab_names(data_path, h_params, fmt=Vocabulary.FORMAT_BINARY_PICKLE):
     model_name = h_params.vect_model
     if 'cbowpos' == h_params.vect_model:
         model_name = 'cbow'
 
-    ext = 'pkl' if Vocabulary.FORMAT_BINARY_PICKLE == format else 'tsv'
+    ext = 'pkl' if Vocabulary.FORMAT_BINARY_PICKLE == fmt else 'tsv'
 
     unit_vocab = 'vocab_{}_{}_unit.{}'.format(model_name, h_params.input_unit, ext)
     label_vocab = 'vocab_{}_{}_label.{}'.format(model_name, h_params.input_unit, ext)
@@ -80,7 +72,9 @@ def main():
 
     tf.get_logger().setLevel(logging.INFO)
 
-    h_params = build_hparams(json.loads(argv.hyper_params.read()))
+    params_path = argv.hyper_params.name
+    argv.hyper_params.close()
+    h_params = build_hparams(params_path)
 
     tf.get_logger().info('Estimating {} and label vocabularies'.format(h_params.input_unit))
     unit_vocab, label_vocab = extract_vocab(argv.data_path, h_params)

@@ -1,9 +1,4 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import argparse
-import json
 import logging
 import os
 import tensorflow as tf
@@ -16,10 +11,7 @@ from .model import build_model
 from .vocab import vocab_names
 
 
-def train_model(data_path, params_path, model_path, findlr_steps=0):
-    with open(params_path, 'r') as f:
-        h_params = build_hparams(json.loads(f.read()))
-
+def train_model(data_path, h_params, model_path, findlr_steps=0):
     if h_params.use_jit:
         os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit'
         tf.config.optimizer.set_jit(True)
@@ -35,7 +27,7 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
         callbacks = [
             tf.keras.callbacks.TensorBoard(
                 os.path.join(model_path, 'logs'),
-                update_freq=100,
+                update_freq=1000,
                 profile_batch='140, 160'),
             tf.keras.callbacks.ModelCheckpoint(
                 os.path.join(model_path, 'train'),
@@ -104,7 +96,8 @@ def main():
 
     params_path = argv.params_path.name
     argv.params_path.close()
+    h_params = build_hparams(params_path)
 
     tf.get_logger().setLevel(logging.INFO)
 
-    train_model(argv.data_path, params_path, argv.model_path, argv.findlr_steps)
+    train_model(argv.data_path, h_params, argv.model_path, argv.findlr_steps)

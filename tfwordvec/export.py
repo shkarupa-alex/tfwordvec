@@ -1,9 +1,4 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import argparse
-import json
 import logging
 import os
 import tensorflow as tf
@@ -16,10 +11,7 @@ from .input import RESERVED
 from .vocab import vocab_names
 
 
-def export_vectors(data_path, params_path, model_path):
-    with open(params_path, 'r') as f:
-        h_params = build_hparams(json.loads(f.read()))
-
+def export_vectors(data_path, h_params, model_path):
     unit_path, _ = vocab_names(data_path, h_params)
     unit_vocab = Vocabulary.load(unit_path)
     unit_top, _ = unit_vocab.split_by_frequency(h_params.unit_freq)
@@ -57,13 +49,14 @@ def main():
     if not os.path.exists(argv.model_path) or not os.path.isdir(argv.model_path):
         raise IOError('Wrong model path')
 
-    unit_path = os.path.join(model_path, 'unit_encoder')
+    unit_path = os.path.join(argv.model_path, 'unit_encoder')
     if not os.path.exists(unit_path) or not os.path.isdir(unit_path):
         raise IOError('Unit encoder not found. Did you export model to TFHub?')
 
     params_path = argv.params_path.name
     argv.params_path.close()
+    h_params = build_hparams(params_path)
 
     tf.get_logger().setLevel(logging.INFO)
 
-    export_vectors(argv.data_path, params_path, argv.model_path)
+    export_vectors(argv.data_path, h_params, argv.model_path)
