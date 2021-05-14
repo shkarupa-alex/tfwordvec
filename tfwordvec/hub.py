@@ -26,26 +26,26 @@ def export_encoder(params_path, model_path):
         zero=h_params.zero_digits)(unit_inputs)
     unit_outputs = unit_encoder(unit_outputs)
     unit_model = Model(inputs=unit_inputs, outputs=unit_outputs)
-    unit_model.save(
-        os.path.join(model_path, 'unit_encoder'),
-        options=tf.saved_model.SaveOptions(namespace_whitelist=['Miss'])
-    )
+    save_options = tf.saved_model.SaveOptions(namespace_whitelist=['Miss'])
+    # TODO tf.saved_model.save
+    unit_model.save(os.path.join(model_path, 'unit_encoder'), options=save_options)
     tf.get_logger().info('Unit encoder saved to {}'.format(os.path.join(model_path, 'unit_encoder')))
 
     if h_params.vect_model in {'cbow', 'cbowpos'}:
         tf.get_logger().info('Context encoder could not be exported for now')
-    #     context_encoder = model.get_layer('context_encoder')
-    #     context_inputs = Input(name='units', shape=(None,), dtype=tf.string)
-    #     context_outputs = NormalizeUnits(
-    #         lower=h_params.lower_case,
-    #         zero=h_params.zero_digits)(context_inputs)
-    #     context_outputs = CbowContext(
-    #         layer=context_encoder,
-    #         window=h_params.window_size,
-    #         position='cbowpos' == h_params.vect_model)(context_outputs)
-    #     context_model = Model(inputs=context_inputs, outputs=context_outputs)
-    #     tf.saved_model.save(context_model, os.path.join(model_path, 'context_encoder'))
-    #     tf.get_logger().info('Context encoder saved to {}'.format(os.path.join(model_path, 'context_encoder')))
+        context_encoder = model.get_layer('context_encoder')
+        context_inputs = Input(name='units', shape=(None,), ragged=True, dtype=tf.string)
+        context_outputs = NormalizeUnits(
+            lower=h_params.lower_case,
+            zero=h_params.zero_digits)(context_inputs)
+        context_outputs = CbowContext(
+            layer=context_encoder,
+            window=h_params.window_size,
+            position='cbowpos' == h_params.vect_model)(context_outputs)
+        context_model = Model(inputs=context_inputs, outputs=context_outputs)
+        context_model.save(os.path.join(model_path, 'context_encoder'), options=save_options)
+        # TODO tf.saved_model.save(context_model, os.path.join(model_path, 'context_encoder'))
+        tf.get_logger().info('Context encoder saved to {}'.format(os.path.join(model_path, 'context_encoder')))
 
     tf.get_logger().info('Export finished')
 
