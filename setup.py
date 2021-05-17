@@ -23,7 +23,7 @@ setup(
     python_requires='>=3.6.0',
     install_requires=[
         'tensorflow>=2.5.0',
-        # 'tensorflow-addons>=0.12.0',
+        'tensorflow-addons>=0.13.0',
         'tfmiss>=0.12.0',
         'nlpvocab>=1.2.0',
         'tensorflow-hub>=0.12.0',
