@@ -1,9 +1,4 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import argparse
-import json
 import logging
 import os
 import tensorflow as tf
@@ -16,21 +11,13 @@ from .model import build_model
 from .vocab import vocab_names
 
 
-def train_model(data_path, params_path, model_path, findlr_steps=0):
-    with open(params_path, 'r') as f:
-        h_params = build_hparams(json.loads(f.read()))
-
-    unit_path, label_path = vocab_names(data_path, h_params)
-    unit_vocab = Vocabulary.load(unit_path)
-    label_vocab = Vocabulary.load(label_path)
-
+def train_model(data_path, h_params, model_path, findlr_steps=0):
     if h_params.use_jit:
         os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit'
-        # tf.config.optimizer.set_jit(True)
+        tf.config.optimizer.set_jit(True)
 
-    old_policy = tf.keras.mixed_precision.experimental.global_policy()
     if h_params.mixed_fp16:
-        tf.keras.mixed_precision.experimental.set_policy('mixed_float16')
+        tf.keras.mixed_precision.set_global_policy('mixed_float16')
 
     if findlr_steps:
         lr_finder = LRFinder(findlr_steps)
@@ -40,12 +27,13 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
         callbacks = [
             tf.keras.callbacks.TensorBoard(
                 os.path.join(model_path, 'logs'),
-                update_freq=100,
+                update_freq=1000,
                 profile_batch='140, 160'),
             tf.keras.callbacks.ModelCheckpoint(
                 os.path.join(model_path, 'train'),
                 monitor='loss',
-                verbose=True)
+                verbose=True,
+                options=tf.saved_model.SaveOptions(namespace_whitelist=['Addons', 'Miss']))
         ]
 
     if 'ranger' == h_params.train_optim.lower():
@@ -54,19 +42,21 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
         optimizer = tf.keras.optimizers.get(h_params.train_optim)
         tf.keras.backend.set_value(optimizer.lr, h_params.learn_rate)
 
+    unit_path, label_path = vocab_names(data_path, h_params)
+    unit_vocab = Vocabulary.load(unit_path)
+    label_vocab = Vocabulary.load(label_path)
     dataset = train_dataset(data_path, h_params, label_vocab)
 
     if os.path.isdir(os.path.join(model_path, 'train')):
-        model = tf.keras.models.load_model()
+        model = tf.keras.models.load_model(os.path.join(model_path, 'train'))  # TODO: check
     else:
         model = build_model(h_params, unit_vocab, label_vocab)
         model.compile(
             optimizer=optimizer,
-            loss='sparse_categorical_crossentropy' if 'sm' == h_params.model_head else None,
-            run_eagerly=findlr_steps > 0
+            loss='sparse_categorical_crossentropy' if 'sm' == h_params.model_head else None
         )
-    model.summary()
 
+    model.summary()
     model.fit(
         dataset,
         epochs=1 if findlr_steps > 0 else h_params.num_epochs,
@@ -75,11 +65,8 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     )
 
     if findlr_steps > 0:
-        best_lr = lr_finder.plot()
+        best_lr, _ = lr_finder.plot()
         tf.get_logger().info('Best lr should be near: {}'.format(best_lr))
-
-    if h_params.mixed_fp16:
-        tf.keras.mixed_precision.experimental.set_policy(old_policy)
 
 
 def main():
@@ -108,7 +95,8 @@ def main():
 
     params_path = argv.params_path.name
     argv.params_path.close()
+    h_params = build_hparams(params_path)
 
     tf.get_logger().setLevel(logging.INFO)
 
-    train_model(argv.data_path, params_path, argv.model_path, argv.findlr_steps)
+    train_model(argv.data_path, h_params, argv.model_path, argv.findlr_steps)

@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import numpy as np
 import os
 import tensorflow as tf
@@ -12,6 +8,7 @@ from ..input import train_dataset, vocab_dataset
 
 class TestTrainDataset(tf.test.TestCase):
     def setUp(self):
+        super().setUp()
         np.random.seed(1)
         tf.random.set_seed(1)
         self.data_dir = os.path.join(os.path.dirname(__file__), 'data')

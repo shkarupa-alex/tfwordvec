@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input
@@ -102,14 +98,14 @@ def _unit_encoder(h_params, unit_vocab):
     if 'adapt' == h_params.embed_type:
         embed = AdaptiveEmbedding(
             cutoff=h_params.aemb_cutoff,
-            input_dim=lookup.vocab_size(),
+            input_dim=lookup.vocabulary_size(),
             output_dim=h_params.embed_size,
             factor=h_params.aemb_factor,
             name='unit_embedding')
     else:
         with tf.device('/CPU:0'):
             embed = Embedding(
-                input_dim=lookup.vocab_size(),
+                input_dim=lookup.vocabulary_size(),
                 output_dim=h_params.embed_size,
                 name='unit_embedding')
     embeddings = embed(indexes)

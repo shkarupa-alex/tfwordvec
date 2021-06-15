@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import numpy as np
 import os
 import tensorflow as tf
@@ -12,6 +7,7 @@ from ..vocab import extract_vocab
 
 class TestExtractVocab(tf.test.TestCase):
     def setUp(self):
+        super().setUp()
         np.random.seed(1)
         tf.random.set_seed(2)
         self.data_dir = os.path.join(os.path.dirname(__file__), 'data')
@@ -49,13 +45,13 @@ class TestExtractVocab(tf.test.TestCase):
         unit_vocab, label_vocab = extract_vocab(self.data_dir, h_params)
 
         expected_units_top = [
-            ('[BOS]', 53), ('[EOS]', 53), ('керри', 8), ('жириновского', 4), ('пайдер', 3), ('жириновский', 3),
+            ('[BOS]', 51), ('[EOS]', 51), ('керри', 8), ('жириновского', 4), ('пайдер', 3), ('жириновский', 3),
             ('лавруша', 2), ('позы', 2), ('становясь', 2), ('сам', 2), ('можно', 2), ('начинал', 2), ('ням', 2),
             ('глубже', 2), ('лет', 2)]
         self.assertListEqual(expected_units_top, unit_vocab.most_common(15))
 
         expected_labels_top = [
-            ('[BOS]', 53), ('[EOS]', 53), ('керри', 8), ('жириновского', 4), ('пайдер', 3), ('жириновский', 3),
+            ('[BOS]', 51), ('[EOS]', 51), ('керри', 8), ('жириновского', 4), ('пайдер', 3), ('жириновский', 3),
             ('лавруша', 2), ('позы', 2), ('становясь', 2), ('сам', 2), ('можно', 2), ('начинал', 2), ('ням', 2),
             ('глубже', 2), ('лет', 2)]
         self.assertListEqual(expected_labels_top, label_vocab.most_common(15))
@@ -71,12 +67,12 @@ class TestExtractVocab(tf.test.TestCase):
         unit_vocab, label_vocab = extract_vocab(self.data_dir, h_params)
 
         expected_units_top = [
-            ('[BOS]', 53), ('[EOS]', 53), ('<по', 16), ('ть>', 15), ('<на', 12), ('нов', 11), ('<пр', 11), ('ерр', 9),
+            ('[BOS]', 51), ('[EOS]', 51), ('<по', 16), ('ть>', 15), ('<на', 12), ('нов', 11), ('<пр', 11), ('ерр', 9),
             ('<жи', 9), ('ири', 9), ('ал>', 9), ('<ке', 8), ('кер', 8), ('рри', 8), ('ри>', 8)]
         self.assertListEqual(expected_units_top, unit_vocab.most_common(15))
 
         expected_labels_top = [
-            ('[BOS]', 53), ('[EOS]', 53), ('керри', 8), ('жириновского', 4), ('пайдер', 3), ('жириновский', 3),
+            ('[BOS]', 51), ('[EOS]', 51), ('керри', 8), ('жириновского', 4), ('пайдер', 3), ('жириновский', 3),
             ('лавруша', 2), ('позы', 2), ('становясь', 2), ('сам', 2), ('можно', 2), ('начинал', 2), ('ням', 2),
             ('глубже', 2), ('лет', 2)]
         self.assertListEqual(expected_labels_top, label_vocab.most_common(15))

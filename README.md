@@ -31,10 +31,17 @@ See `tfwordvec/tests/test_hub.py` for example.
 Use `tfwordvec-export` to export `SavedModel` from hub to binary format.
 
 ## Evaluation
-In-package evaluation scripts unavailable for now. Use exported model and original tools.
+There is no in-package evaluation scripts. 
+To make evaluation use original word2vec evaluation scripts. 
 Some common datasets can be found in `datasets` directory.
 
 More evaluation datasets can be found here:
 - [rt, ae, ae2](https://russe.nlpub.org/task/)
 - [assoc](https://github.com/dkulagin/kartaslov)
 - [lrwc](https://github.com/natasha/corus#load_toloka_lrwc)
+
+Also you ma try more complex projects like:
+-  [Naeval](https://github.com/natasha/naeval)
+-  [DeepPavlovEval](https://github.com/deepmipt/deepPavlovEval)
+-  [SentEvalRu](https://github.com/comptechml/SentEvalRu)
+-  [SentEval](https://github.com/facebookresearch/SentEval)

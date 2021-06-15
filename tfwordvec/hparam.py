@@ -1,15 +1,16 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+import os
+import json
 from tfmiss.training import HParams
 from tensorflow.keras import optimizers as core_opt
 from tensorflow_addons import optimizers as add_opt  # Required to initialize custom optimizers
 
 
 def build_hparams(custom):
-    if not isinstance(custom, dict):
-        raise TypeError('Expected custom parameters to be dict. Got {}'.format(type(custom)))
+    if isinstance(custom, str) and custom.endswith('.json') and os.path.isfile(custom):
+        with open(custom, 'r') as file:
+            custom = json.loads(file.read())
+
+    assert isinstance(custom, dict), 'Bad hyperparameters format'
 
     params = HParams(
         input_unit='word',  # or 'char' or 'ngram'
@@ -58,59 +59,35 @@ def build_hparams(custom):
     # Disabled to use tensorflow-addons optimizers
     # params.train_optim = params.train_optim.lower()
 
-    if params.input_unit not in {'char', 'word', 'ngram'}:
-        raise ValueError('Unsupported input unit')
-    if 0 >= params.unit_freq:
-        raise ValueError('Bad minimum unit frequency')
-    if 0 >= params.label_freq:
-        raise ValueError('Bad minimum label frequency')
-    if not 0 < params.ngram_minn < params.ngram_maxn:
-        raise ValueError('Bad min/max ngram sizes')
-    if params.ngram_self not in {'always', 'alone'}:
-        raise ValueError('Unsupported ngram extractor')
-    if params.ngram_comb not in {'mean', 'sum', 'min', 'max', 'prod'}:
-        raise ValueError('Unsupported ngram combiner')
+    assert params.input_unit in {'char', 'word', 'ngram'}, 'Unsupported input unit'
+    assert 0 < params.unit_freq, 'Bad minimum unit frequency'
+    assert 0 < params.label_freq, 'Bad minimum label frequency'
+    assert 0 < params.ngram_minn < params.ngram_maxn, 'Bad min/max ngram sizes'
+    assert params.ngram_self in {'always', 'alone'}, 'Unsupported ngram extractor'
+    assert params.ngram_comb in {'mean', 'sum', 'min', 'max', 'prod'}, 'Unsupported ngram combiner'
 
-    if params.vect_model not in {'cbow', 'skipgram', 'cbowpos'}:
-        raise ValueError('Unsupported vector model')
-    if 0 >= params.window_size:
-        raise ValueError('Bad window size')
-    if 0. >= params.samp_thold:
-        raise ValueError('Bad downsampling threshold')
-    if 0 >= params.embed_size:
-        raise ValueError('Bad embedding size')
-    if params.embed_type not in {'dense', 'adapt'}:
-        raise ValueError('Unsupported embedding type')
-    if 'adapt' == params.embed_type and not params.aemb_cutoff:
-        raise ValueError('Bad adaptive embedding cutoff')
-    if 'adapt' == params.embed_type and 0 >= params.aemb_factor:
-        raise ValueError('Bad adaptive embedding factor')
-    if 0. > params.l2_scale:
-        raise ValueError('Bad l2 scale factor')
+    assert params.vect_model in {'cbow', 'skipgram', 'cbowpos'}, 'Unsupported vector model'
+    assert 0 < params.window_size, 'Bad window size'
+    assert 0. < params.samp_thold, 'Bad downsampling threshold'
+    assert 0 < params.embed_size, 'Bad embedding size'
+    assert params.embed_type in {'dense', 'adapt'}, 'Unsupported embedding type'
+    if 'adapt' == params.embed_type:
+        assert params.aemb_cutoff, 'Bad adaptive embedding cutoff'
+        assert 0 < params.aemb_factor, 'Bad adaptive embedding factor'
+    assert 0. <= params.l2_scale, 'Bad l2 scale factor'
 
-    if params.model_head not in {'ss', 'nce', 'asm', 'sm'}:
-        raise ValueError('Unsupported softmax head')
-    if params.model_head in {'nce', 'ss'} and 0 >= params.neg_samp:
-        raise ValueError('Bad number of negative samples')
-    if 'asm' == params.model_head and not params.asm_cutoff:
-        raise ValueError('Bad adaptive softmax cutoff')
-    if 'asm' == params.model_head and 0 >= params.asm_factor:
-        raise ValueError('Bad adaptive softmax factor')
-    if 'asm' == params.model_head and not 0. <= params.asm_drop < 1.:
-        raise ValueError('Bad adaptive softmax dropout')
+    assert params.model_head in {'ss', 'nce', 'asm', 'sm'}, 'Unsupported softmax head'
+    if params.model_head in {'nce', 'ss'}:
+        assert 0 < params.neg_samp, 'Bad number of negative samples'
+    if 'asm' == params.model_head:
+        assert params.asm_cutoff, 'Bad adaptive softmax cutoff'
+        assert 0 < params.asm_factor, 'Bad adaptive softmax factor'
+        assert 0. <= params.asm_drop < 1., 'Bad adaptive softmax dropout'
 
-    if 0 >= params.batch_size:
-        raise ValueError('Bad batch size')
-    if 0 >= params.num_epochs:
-        raise ValueError('Bad number of epochs')
-    if not len(params.train_optim):
-        raise ValueError('Bad train optimizer')
-    elif 'ranger' != params.train_optim.lower():
-        try:
-            core_opt.get(params.train_optim)
-        except:
-            raise ValueError('Unsupported train optimizer')
-    if 0. >= params.learn_rate:
-        raise ValueError('Bad learning rate')
+    assert 0 < params.batch_size, 'Bad batch size'
+    assert 0 < params.num_epochs, 'Bad number of epochs'
+    assert params.train_optim, 'Bad train optimizer'
+    assert 'ranger' == params.train_optim.lower() or core_opt.get(params.train_optim), 'Unsupported train optimizer'
+    assert 0. < params.learn_rate, 'Bad learning rate'
 
     return params
