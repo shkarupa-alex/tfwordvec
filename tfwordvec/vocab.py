@@ -17,8 +17,7 @@ def extract_vocab(data_path, h_params):
         labels = _unicode_tensor(labels.flat_values)
         label_vocab.update(labels)
 
-    if label_vocab[''] > 0:
-        raise ValueError('Something went wrong. Empty label found.')
+    assert 0 == label_vocab[''], 'Empty label occured'
 
     unit_vocab = Vocabulary()
     if 'ngram' == h_params.input_unit:
@@ -67,8 +66,7 @@ def main():
         help='Path to train .txt.gz files')
 
     argv, _ = parser.parse_known_args()
-    if not os.path.exists(argv.data_path) or not os.path.isdir(argv.data_path):
-        raise ValueError('Wrong train dataset path')
+    assert os.path.exists(argv.data_path) and os.path.isdir(argv.data_path), 'Wrong train dataset path'
 
     tf.get_logger().setLevel(logging.INFO)
 
@@ -89,7 +87,8 @@ def main():
     label_vocab.save(label_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
 
     if 'dense' == h_params.embed_type:
-        unit1k_vocab, _ = unit_vocab.split_by_size(1000)
+        unit1k_vocab, _ = unit_vocab.split_by_size(999)
+        unit1k_vocab['[UNK]'] = unit1k_vocab[unit1k_vocab.tokens()[0]] + 1
         unit1k_tsv = unit_tsv[:-4] + '1k' + unit_tsv[-4:]
         unit1k_vocab.save(unit1k_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
 

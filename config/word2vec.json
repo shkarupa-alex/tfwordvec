@@ -1,17 +1,21 @@
 {
   "input_unit": "word",
+  "lower_case": true,
   "zero_digits": true,
   "unit_freq": 20,
   "label_freq": 40,
   "vect_model": "skipgram",
   "window_size": 5,
+  "samp_thold": 0.001,
   "embed_size": 256,
   "embed_type": "dense",
   "samp_thold": 1e-2,
   "model_head": "nce",
   "neg_samp": 5,
   "batch_size": 1024,
-  "num_epochs": 3,
+  "num_epochs": 5,
+  "mixed_fp16": false,
+  "use_jit": true,
   "train_optim": "Adam",
   "learn_rate": 0.05
 }

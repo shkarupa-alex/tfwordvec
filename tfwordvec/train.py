@@ -90,8 +90,7 @@ def main():
         help='Run model with LRFinder callback')
 
     argv, _ = parser.parse_known_args()
-    if not os.path.exists(argv.data_path) or not os.path.isdir(argv.data_path):
-        raise IOError('Wrong data path')
+    assert os.path.exists(argv.data_path) and os.path.isdir(argv.data_path), 'Wrong data path'
 
     params_path = argv.params_path.name
     argv.params_path.close()

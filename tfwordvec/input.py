@@ -149,8 +149,7 @@ def _transform_model(units, h_params):
 
 
 def _label_lookup(label_vocab, h_params):
-    if not isinstance(label_vocab, Vocabulary):
-        raise ValueError('Wrong label vocabulary type')
+    assert isinstance(label_vocab, Vocabulary), 'Wrong label vocabulary type'
 
     top, _ = label_vocab.split_by_frequency(h_params.label_freq)
     keys = top.tokens() + [UNK_MARK]

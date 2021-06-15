@@ -12,10 +12,20 @@
   "window_size": 5,
   "samp_thold": 0.001,
   "embed_size": 256,
-  "embed_type": "dense",
+  "embed_type": "adapt",
+  "aemb_cutoff": [
+    1000,
+    10000
+  ],
+  "aemb_factor": 4,
   "samp_thold": 1e-2,
-  "model_head": "ss",
-  "neg_samp": 5,
+  "model_head": "asm",
+  "asm_cutoff": [
+    1000,
+    10000
+  ],
+  "asm_factor": 4,
+  "asm_drop": 0.0,
   "batch_size": 1024,
   "bucket_cbow": true,
   "num_epochs": 5,

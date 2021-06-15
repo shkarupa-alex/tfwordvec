@@ -44,14 +44,12 @@ def main():
         help='Path to save model')
 
     argv, _ = parser.parse_known_args()
-    if not os.path.exists(argv.data_path) or not os.path.isdir(argv.data_path):
-        raise IOError('Wrong data path')
-    if not os.path.exists(argv.model_path) or not os.path.isdir(argv.model_path):
-        raise IOError('Wrong model path')
+    assert os.path.exists(argv.data_path) and os.path.isdir(argv.data_path), 'Wrong data path'
+    assert os.path.exists(argv.model_path) and os.path.isdir(argv.model_path), 'Wrong model path'
 
     unit_path = os.path.join(argv.model_path, 'unit_encoder')
-    if not os.path.exists(unit_path) or not os.path.isdir(unit_path):
-        raise IOError('Unit encoder not found. Did you export model to TFHub?')
+    assert os.path.exists(unit_path) and os.path.isdir(unit_path), \
+        'Unit encoder not found. Did you export model to TFHub?'
 
     params_path = argv.params_path.name
     argv.params_path.close()
