@@ -33,7 +33,7 @@ def train_model(data_path, h_params, model_path, findlr_steps=0):
                 os.path.join(model_path, 'train'),
                 monitor='loss',
                 verbose=True,
-                options=tf.saved_model.SaveOptions(namespace_whitelist=['Miss']))
+                options=tf.saved_model.SaveOptions(namespace_whitelist=['Addons', 'Miss']))
         ]
 
     if 'ranger' == h_params.train_optim.lower():
@@ -53,8 +53,7 @@ def train_model(data_path, h_params, model_path, findlr_steps=0):
         model = build_model(h_params, unit_vocab, label_vocab)
         model.compile(
             optimizer=optimizer,
-            loss='sparse_categorical_crossentropy' if 'sm' == h_params.model_head else None,
-            run_eagerly=findlr_steps > 0
+            loss='sparse_categorical_crossentropy' if 'sm' == h_params.model_head else None
         )
 
     model.summary()
