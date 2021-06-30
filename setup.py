@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from setuptools import setup, find_packages
 
-__VERSION__ = '1.3.0'
+__VERSION__ = '1.3.1'
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
@@ -25,7 +25,7 @@ setup(
         'tensorflow>=2.5.0',
         'tensorflow-addons>=0.13.0',
         'tensorflow-hub>=0.12.0',
-        'tfmiss>=0.13.4',
+        'tfmiss>=0.13.6',
         'nlpvocab>=1.2.0',
         'gensim>=3.8.1'
     ],

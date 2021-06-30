@@ -3,9 +3,8 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Activation, Dense, Embedding
 from tfmiss.keras.layers import AdaptiveSoftmax, NoiseContrastiveEstimation, SampledSofmax, L2Scale, Reduction
-from tfmiss.keras.layers import WordEmbedding, CharNgramEmbedding, CharBpeEmbedding, CharCnnEmbedding
+from tfmiss.keras.layers import WordEmbedding, CharNgramEmbedding, CharBpeEmbedding, CharCnnEmbedding, MapFlat
 from .input import RESERVED, UNK_MARK
-from .layer import MapFlat
 
 
 def build_model(h_params, unit_vocab, label_vocab):
