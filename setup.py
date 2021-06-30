@@ -25,7 +25,7 @@ setup(
         'tensorflow>=2.5.0',
         'tensorflow-addons>=0.13.0',
         'tensorflow-hub>=0.12.0',
-        'tfmiss>=0.13.4',
+        'tfmiss>=0.13.6',
         'nlpvocab>=1.2.0',
         'gensim>=3.8.1'
     ],
