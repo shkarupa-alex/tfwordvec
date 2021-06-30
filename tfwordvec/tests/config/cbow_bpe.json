@@ -1,0 +1,14 @@
+{
+  "input_unit": "bpe",
+  "bpe_size": 200,
+  "bpe_chars": 75,
+  "unit_freq": 2,
+  "label_freq": 3,
+  "vect_model": "cbow",
+  "embed_type": "adapt",
+  "aemb_cutoff": [2, 4],
+  "window_size": 5,
+  "samp_thold": 1e-1,
+  "model_head": "ss",
+  "num_epochs": 1
+}

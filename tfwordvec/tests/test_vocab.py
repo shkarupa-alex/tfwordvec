@@ -41,13 +41,14 @@ class TestExtractVocab(tf.test.TestCase):
             'input_unit': 'word',
             'vect_model': 'cbow',
             'model_head': 'ss',
+            'bucket_cbow': False
         })
         unit_vocab, label_vocab = extract_vocab(self.data_dir, h_params)
 
         expected_units_top = [
-            ('[BOS]', 51), ('[EOS]', 51), ('керри', 8), ('жириновского', 4), ('пайдер', 3), ('жириновский', 3),
-            ('лавруша', 2), ('позы', 2), ('становясь', 2), ('сам', 2), ('можно', 2), ('начинал', 2), ('ням', 2),
-            ('глубже', 2), ('лет', 2)]
+            ('[BOS]', 51), ('[EOS]', 51), ('керри', 8), ('жириновского', 4), ('жириновский', 3), ('пайдер', 3),
+            ('владиракл', 2), ('глубже', 2), ('дмитриус', 2), ('есть', 2), ('лавруша', 2), ('лет', 2), ('можно', 2),
+            ('нах', 2), ('начинал', 2)]
         self.assertListEqual(expected_units_top, unit_vocab.most_common(15))
 
         expected_labels_top = [
@@ -56,12 +57,12 @@ class TestExtractVocab(tf.test.TestCase):
             ('глубже', 2), ('лет', 2)]
         self.assertListEqual(expected_labels_top, label_vocab.most_common(15))
 
-    def test_ngram_cbowpos_nobuck(self):
+    def test_ngram_cbowpos(self):
         h_params = build_hparams({
             'input_unit': 'ngram',
             'vect_model': 'cbowpos',
             'model_head': 'asm',
-            'bucket_cbow': False,
+            'bucket_cbow': False
         })
 
         unit_vocab, label_vocab = extract_vocab(self.data_dir, h_params)
@@ -69,6 +70,48 @@ class TestExtractVocab(tf.test.TestCase):
         expected_units_top = [
             ('[BOS]', 51), ('[EOS]', 51), ('<по', 16), ('ть>', 15), ('<на', 12), ('нов', 11), ('<пр', 11), ('ерр', 9),
             ('<жи', 9), ('ири', 9), ('ал>', 9), ('<ке', 8), ('кер', 8), ('рри', 8), ('ри>', 8)]
+        self.assertListEqual(expected_units_top, unit_vocab.most_common(15))
+
+        expected_labels_top = [
+            ('[BOS]', 51), ('[EOS]', 51), ('керри', 8), ('жириновского', 4), ('пайдер', 3), ('жириновский', 3),
+            ('лавруша', 2), ('позы', 2), ('становясь', 2), ('сам', 2), ('можно', 2), ('начинал', 2), ('ням', 2),
+            ('глубже', 2), ('лет', 2)]
+        self.assertListEqual(expected_labels_top, label_vocab.most_common(15))
+
+    def test_bpe_skipgram(self):
+        h_params = build_hparams({
+            'input_unit': 'bpe',
+            'bpe_size': 50,
+            'bpe_chars': 10,
+            'vect_model': 'skipgram',
+            'model_head': 'sm'
+        })
+        unit_vocab, label_vocab = extract_vocab(self.data_dir, h_params)
+
+        expected_units_top = [
+            ('##[UNK]', 451), ('##а', 153), ('##о', 135), ('[UNK]', 133), ('##и', 124), ('##е', 118), ('##р', 103),
+            ('##т', 79), ('##н', 70), ('##с', 67), ('##в', 64), ('##л', 64), ('[BOS]', 51), ('[EOS]', 51), ('с', 27),
+            ('о', 19), ('н', 18), ('т', 13), ('в', 12), ('л', 9), ('е', 5), ('р', 5), ('и', 4), ('лет', 2)]
+        self.assertListEqual(expected_units_top, unit_vocab.most_common(24))
+
+        expected_labels_top = [
+            ('[BOS]', 51), ('[EOS]', 51), ('керри', 8), ('жириновского', 4), ('пайдер', 3), ('жириновский', 3),
+            ('лавруша', 2), ('позы', 2), ('становясь', 2), ('сам', 2), ('можно', 2), ('начинал', 2), ('ням', 2),
+            ('глубже', 2), ('лет', 2)]
+        self.assertListEqual(expected_labels_top, label_vocab.most_common(15))
+
+    def test_cnn_cbow(self):
+        h_params = build_hparams({
+            'input_unit': 'cnn',
+            'vect_model': 'cbow',
+            'model_head': 'sm',
+            'bucket_cbow': False
+        })
+        unit_vocab, label_vocab = extract_vocab(self.data_dir, h_params)
+
+        expected_units_top = [
+            ('[BOW]', 364), ('[EOW]', 364), ('а', 162), ('о', 159), ('и', 136), ('е', 130), ('р', 112), ('т', 105),
+            ('с', 101), ('н', 91), ('в', 81), ('л', 79), ('к', 73), ('м', 57), ('д', 56)]
         self.assertListEqual(expected_units_top, unit_vocab.most_common(15))
 
         expected_labels_top = [

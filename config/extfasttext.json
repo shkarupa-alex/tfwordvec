@@ -18,7 +18,6 @@
     10000
   ],
   "aemb_factor": 4,
-  "samp_thold": 1e-2,
   "model_head": "asm",
   "asm_cutoff": [
     1000,

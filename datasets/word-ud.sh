@@ -14,7 +14,7 @@ if [[ ! -d "${TREEBANKS_NAME}" ]]; then
 fi;
 
 
-DATASET_DIR="ud_word_dataset"
+DATASET_DIR="ud_dataset"
 rm -rf "${DATASET_DIR}"
 mkdir "${DATASET_DIR}"
 (

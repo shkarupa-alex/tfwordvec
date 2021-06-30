@@ -1,7 +1,7 @@
 {
   "input_unit": "ngram",
-  "unit_freq": 16,
-  "label_freq": 2,
+  "unit_freq": 2,
+  "label_freq": 3,
   "ngram_comb": "sum",
   "vect_model": "cbow",
   "embed_type": "adapt",

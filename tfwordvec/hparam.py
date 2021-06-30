@@ -13,21 +13,26 @@ def build_hparams(custom):
     assert isinstance(custom, dict), 'Bad hyperparameters format'
 
     params = HParams(
-        input_unit='word',  # or 'char' or 'ngram'
+        input_unit='word',  # or 'char' or 'ngram' or 'bpe' or 'cnn'
         lower_case=True,
         zero_digits=False,
-        unit_freq=1,
-        label_freq=1,
+        max_len=32,
+        unit_freq=2,
+        label_freq=2,
         ngram_minn=3,
         ngram_maxn=5,
         ngram_self='always',  # or 'alone'
         ngram_comb='mean',  # or 'sum' or 'min' or 'max' or 'prod'
+        bpe_size=32000,
+        bpe_chars=1000,
+        cnn_kern=[1, 2, 3, 4, 5, 6, 7],
+        cnn_filt=[32, 32, 64, 128, 256, 512, 1024],
 
         vect_model='cbow',  # or 'skipgram' or 'cbowpos'
         window_size=5,
         samp_thold=1e-3,
         embed_size=256,
-        embed_type='dense',  # or 'adapt'
+        embed_type='dense_auto',  # or 'dense_cpu' or 'adapt'
         aemb_cutoff=[0],
         aemb_factor=4,
         l2_scale=0.,
@@ -59,18 +64,25 @@ def build_hparams(custom):
     # Disabled to use tensorflow-addons optimizers
     # params.train_optim = params.train_optim.lower()
 
-    assert params.input_unit in {'char', 'word', 'ngram'}, 'Unsupported input unit'
+    if 'char' == params.input_unit:
+        params.max_len = None
+
+    assert params.input_unit in {'char', 'word', 'ngram', 'bpe', 'cnn'}, 'Unsupported input unit'
+    assert params.max_len is None or 3 < params.max_len, 'Bad maximum word length'
     assert 0 < params.unit_freq, 'Bad minimum unit frequency'
     assert 0 < params.label_freq, 'Bad minimum label frequency'
     assert 0 < params.ngram_minn < params.ngram_maxn, 'Bad min/max ngram sizes'
     assert params.ngram_self in {'always', 'alone'}, 'Unsupported ngram extractor'
     assert params.ngram_comb in {'mean', 'sum', 'min', 'max', 'prod'}, 'Unsupported ngram combiner'
+    assert 0 < params.bpe_size, 'Bad BPE vocabulary size'
+    assert 'cnn' != params.input_unit or len(params.cnn_kern), 'Empty CNN kernels list'
+    assert len(params.cnn_kern) == len(params.cnn_filt), 'CNN kernels vs. filters length mismatch'
 
     assert params.vect_model in {'cbow', 'skipgram', 'cbowpos'}, 'Unsupported vector model'
     assert 0 < params.window_size, 'Bad window size'
     assert 0. < params.samp_thold, 'Bad downsampling threshold'
     assert 0 < params.embed_size, 'Bad embedding size'
-    assert params.embed_type in {'dense', 'adapt'}, 'Unsupported embedding type'
+    assert params.embed_type in {'dense_auto', 'dense_cpu', 'adapt'}, 'Unsupported embedding type'
     if 'adapt' == params.embed_type:
         assert params.aemb_cutoff, 'Bad adaptive embedding cutoff'
         assert 0 < params.aemb_factor, 'Bad adaptive embedding factor'

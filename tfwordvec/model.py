@@ -2,23 +2,21 @@ import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Activation, Dense, Embedding
-from tensorflow.keras.layers.experimental.preprocessing import StringLookup
-from tfmiss.keras.layers import AdaptiveEmbedding, AdaptiveSoftmax, NoiseContrastiveEstimation, SampledSofmax
-from tfmiss.keras.layers import CharNgams, L2Scale, Reduction
-from .input import UNK_MARK, RESERVED
+from tfmiss.keras.layers import AdaptiveSoftmax, NoiseContrastiveEstimation, SampledSofmax, L2Scale, Reduction
+from tfmiss.keras.layers import WordEmbedding, CharNgramEmbedding, CharBpeEmbedding, CharCnnEmbedding
+from .input import RESERVED, UNK_MARK
 from .layer import MapFlat
 
 
 def build_model(h_params, unit_vocab, label_vocab):
-    top_labels, _ = label_vocab.split_by_frequency(h_params.label_freq)
-    num_labels = len(top_labels)
-
     inputs = _context_inputs(h_params)
     encoder = _build_encoder(h_params, unit_vocab)
     logits = encoder(inputs)
 
+    top_labels, _ = label_vocab.split_by_frequency(h_params.label_freq)
+    num_labels = len(top_labels)
+
     if 'sm' != h_params.model_head:
-        # Add labels input after encoder call to bypass "ignoring input" warning
         inputs['labels'] = Input(name='labels', shape=(), dtype=tf.int32)
 
     if 'ss' == h_params.model_head:
@@ -77,43 +75,46 @@ def _context_inputs(h_params):
 def _unit_encoder(h_params, unit_vocab):
     inputs = Input(name='units', shape=(), dtype=tf.string)
 
-    units = inputs
-    if 'ngram' == h_params.input_unit:
-        units = CharNgams(
-            minn=h_params.ngram_minn,
-            maxn=h_params.ngram_maxn,
-            itself=h_params.ngram_self,
-            reserved=RESERVED,
-            name='ngram_expansion')(units)
-
-    unit_top, _ = unit_vocab.split_by_frequency(h_params.unit_freq)
+    unit_top, unit_unk = unit_vocab.split_by_frequency(h_params.unit_freq)
+    unit_top[UNK_MARK] += sum([f for _, f in unit_unk.most_common()])
     unit_keys = unit_top.tokens()
-    lookup = StringLookup(
-        vocabulary=unit_keys,
-        mask_token=None,
-        oov_token=UNK_MARK,
-        name='unit_lookup')
-    indexes = lookup(units)
 
-    if 'adapt' == h_params.embed_type:
-        embed = AdaptiveEmbedding(
-            cutoff=h_params.aemb_cutoff,
-            input_dim=lookup.vocabulary_size(),
-            output_dim=h_params.embed_size,
-            factor=h_params.aemb_factor,
-            name='unit_embedding')
-    else:
-        with tf.device('/CPU:0'):
-            embed = Embedding(
-                input_dim=lookup.vocabulary_size(),
-                output_dim=h_params.embed_size,
-                name='unit_embedding')
-    embeddings = embed(indexes)
-
-    if 'ngram' == h_params.input_unit:
-        embeddings = Reduction(h_params.ngram_comb, name='ngram_reduction')(embeddings)
+    unit_embedder = _unit_embedder(h_params, unit_keys)
+    embeddings = unit_embedder(inputs)
 
     if h_params.l2_scale > 1.:
-        embeddings = L2Scale(h_params.l2_scale, name='scale')(embeddings)
+        embeddings = L2Scale(h_params.l2_scale, name='embedding_scale')(embeddings)
 
     return Model(inputs=inputs, outputs=embeddings, name='unit_encoder')
+
+
+def _unit_embedder(h_params, vocabulary):
+    common_kwargs = {
+        'vocabulary': vocabulary,
+        'output_dim': h_params.embed_size,
+        'normalize_unicode': 'NFKC',
+        'lower_case': h_params.lower_case,
+        'zero_digits': h_params.zero_digits,
+        'max_len': h_params.max_len,
+        'reserved_words': RESERVED,
+        'embed_type': h_params.embed_type,
+        'adapt_cutoff': h_params.aemb_cutoff,
+        'adapt_factor': h_params.aemb_factor,
+        'name': 'unit_embedding',
+        'show_warning': len(vocabulary) > len(RESERVED)
+    }
+
+    if 'ngram' == h_params.input_unit:
+        return CharNgramEmbedding(
+            minn=h_params.ngram_minn, maxn=h_params.ngram_maxn, itself=h_params.ngram_self,
+            reduction=h_params.ngram_comb, **common_kwargs)
+
+    if 'bpe' == h_params.input_unit:
+        return CharBpeEmbedding(
+            reduction=h_params.ngram_comb, vocab_size=h_params.bpe_size, max_chars=h_params.bpe_chars,
+            **common_kwargs)
+
+    if 'cnn' == h_params.input_unit:
+        return CharCnnEmbedding(filters=h_params.cnn_filt, kernels=h_params.cnn_kern, **common_kwargs)
+
+    return WordEmbedding(**common_kwargs)
