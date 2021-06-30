@@ -1,0 +1,10 @@
+{
+  "input_unit": "cnn",
+  "unit_freq": 2,
+  "label_freq": 3,
+  "vect_model": "cbow",
+  "window_size": 5,
+  "samp_thold": 1e-1,
+  "model_head": "sm",
+  "num_epochs": 1
+}

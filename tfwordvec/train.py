@@ -8,10 +8,12 @@ from tfmiss.keras.callbacks import LRFinder
 from .hparam import build_hparams
 from .input import train_dataset
 from .model import build_model
-from .vocab import vocab_names
+from .vocab import _vocab_names
 
 
-def train_model(data_path, h_params, model_path, findlr_steps=0):
+def train_model(data_path, params_path, model_path, findlr_steps=0):
+    h_params = build_hparams(params_path)
+
     if h_params.use_jit:
         os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit'
         tf.config.optimizer.set_jit(True)
@@ -42,14 +44,16 @@ def train_model(data_path, h_params, model_path, findlr_steps=0):
         optimizer = tf.keras.optimizers.get(h_params.train_optim)
         tf.keras.backend.set_value(optimizer.lr, h_params.learn_rate)
 
-    unit_path, label_path = vocab_names(data_path, h_params)
+    unit_path, label_path = _vocab_names(data_path, h_params)
     unit_vocab = Vocabulary.load(unit_path)
     label_vocab = Vocabulary.load(label_path)
     dataset = train_dataset(data_path, h_params, label_vocab)
 
     if os.path.isdir(os.path.join(model_path, 'train')):
+        tf.get_logger().info('Previous training found. Loading pretrained model.')
         model = tf.keras.models.load_model(os.path.join(model_path, 'train'))  # TODO: check
     else:
+        tf.get_logger().info('No previous training found. Creating model from scratch.')
         model = build_model(h_params, unit_vocab, label_vocab)
         model.compile(
             optimizer=optimizer,
@@ -72,7 +76,7 @@ def train_model(data_path, h_params, model_path, findlr_steps=0):
 def main():
     parser = argparse.ArgumentParser(description='Word2Vec model trainer')
     parser.add_argument(
-        'params_path',
+        'hyper_params',
         type=argparse.FileType('rb'),
         help='JSON-encoded model hyperparameters file')
     parser.add_argument(
@@ -90,13 +94,11 @@ def main():
         help='Run model with LRFinder callback')
 
     argv, _ = parser.parse_known_args()
-    if not os.path.exists(argv.data_path) or not os.path.isdir(argv.data_path):
-        raise IOError('Wrong data path')
+    assert os.path.exists(argv.data_path) and os.path.isdir(argv.data_path), 'Wrong data path'
 
-    params_path = argv.params_path.name
-    argv.params_path.close()
-    h_params = build_hparams(params_path)
+    params_path = argv.hyper_params.name
+    argv.hyper_params.close()
 
     tf.get_logger().setLevel(logging.INFO)
 
-    train_model(argv.data_path, h_params, argv.model_path, argv.findlr_steps)
+    train_model(argv.data_path, params_path, argv.model_path, argv.findlr_steps)

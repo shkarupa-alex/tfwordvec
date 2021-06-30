@@ -1,7 +1,7 @@
 {
   "input_unit": "char",
-  "unit_freq": 50,
-  "label_freq": 30,
+  "unit_freq": 2,
+  "label_freq": 3,
   "vect_model": "cbowpos",
   "window_size": 5,
   "samp_thold": 1e-1,

@@ -5,10 +5,10 @@ from tfmiss.preprocessing import skip_gram, cont_bow, down_sample
 from tfmiss.text import normalize_unicode, zero_digits, split_chars, lower_case
 from tfmiss.training import estimate_bucket_pipeline
 
+UNK_MARK = '[UNK]'
 BOS_MARK = '[BOS]'
 EOS_MARK = '[EOS]'
-UNK_MARK = '[UNK]'
-RESERVED = [BOS_MARK, EOS_MARK, UNK_MARK]
+RESERVED = [UNK_MARK, BOS_MARK, EOS_MARK]
 
 
 def train_dataset(src_path, h_params, label_vocab):
@@ -41,7 +41,7 @@ def train_dataset(src_path, h_params, label_vocab):
 
     dataset = _raw_dataset(src_path, h_params)
     dataset = dataset.map(_pre_transform, tf.data.AUTOTUNE)
-    dataset = dataset.shuffle(100)
+    dataset = dataset.shuffle(1000)
     dataset = dataset.unbatch()
     dataset = dataset.filter(lambda features, *args: features['filters'])
 
@@ -106,6 +106,7 @@ def _transform_split(sentences, h_params):
     if 'char' != h_params.input_unit:
         sentences = tf.strings.regex_replace(sentences, r'\s+', ' ')
     sentences = tf.strings.strip(sentences)
+
     if h_params.lower_case:
         sentences = lower_case(sentences)
     if h_params.zero_digits:
@@ -116,6 +117,7 @@ def _transform_split(sentences, h_params):
     else:
         units = tf.strings.split(sentences, sep=' ')
 
+    # Same preprocessing should be in CbowContext
     bos = tf.fill([units.nrows(), 1], BOS_MARK)
     eos = tf.fill([units.nrows(), 1], EOS_MARK)
     units = tf.concat([bos, units, eos], axis=1)
@@ -149,8 +151,7 @@ def _transform_model(units, h_params):
 
 
 def _label_lookup(label_vocab, h_params):
-    if not isinstance(label_vocab, Vocabulary):
-        raise ValueError('Wrong label vocabulary type')
+    assert isinstance(label_vocab, Vocabulary), 'Wrong label vocabulary type'
 
     top, _ = label_vocab.split_by_frequency(h_params.label_freq)
     keys = top.tokens() + [UNK_MARK]

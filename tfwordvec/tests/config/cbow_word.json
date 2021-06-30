@@ -1,7 +1,7 @@
 {
   "input_unit": "word",
-  "unit_freq": 4,
-  "label_freq": 2,
+  "unit_freq": 2,
+  "label_freq": 3,
   "vect_model": "cbow",
   "window_size": 5,
   "samp_thold": 1e-1,

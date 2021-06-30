@@ -1,44 +1,29 @@
 import argparse
 import logging
-import numpy as np
 import os
 import tensorflow as tf
 from nlpvocab import Vocabulary
-from tfmiss.keras.layers import CharNgams
 from .input import RESERVED, vocab_dataset
+from .model import _unit_embedder
 from .hparam import build_hparams
 
 
 def extract_vocab(data_path, h_params):
-    label_vocab = Vocabulary()
     dataset = vocab_dataset(data_path, h_params)
 
+    label_vocab = Vocabulary()
     for labels in dataset:
-        labels = _unicode_tensor(labels.flat_values)
-        label_vocab.update(labels)
+        label_vocab.update(labels.flat_values.numpy())
+    label_vocab = Vocabulary({w.decode('utf-8'): f for w, f in label_vocab.most_common()})
+    assert 0 == label_vocab[''], 'Empty label occured'
 
-    if label_vocab[''] > 0:
-        raise ValueError('Something went wrong. Empty label found.')
-
-    unit_vocab = Vocabulary()
-    if 'ngram' == h_params.input_unit:
-        labels = tf.constant(label_vocab.tokens(), dtype=tf.string)
-        ngrams = CharNgams(
-            minn=h_params.ngram_minn,
-            maxn=h_params.ngram_maxn,
-            itself=h_params.ngram_self,
-            reserved=RESERVED)(labels)
-        for label, ngram in zip(label_vocab.tokens(), ngrams):
-            ngram = _unicode_tensor(ngram).reshape([-1])
-            for n in ngram:
-                unit_vocab[n] += label_vocab[label]
-    else:
-        unit_vocab.update(label_vocab)
+    embedder = _unit_embedder(h_params, RESERVED)
+    unit_vocab = embedder.vocab(label_vocab)
 
     return unit_vocab, label_vocab
 
 
-def vocab_names(data_path, h_params, fmt=Vocabulary.FORMAT_BINARY_PICKLE):
+def _vocab_names(data_path, h_params, fmt=Vocabulary.FORMAT_BINARY_PICKLE):
     model_name = h_params.vect_model
     if 'cbowpos' == h_params.vect_model:
         model_name = 'cbow'
@@ -49,10 +34,6 @@ def vocab_names(data_path, h_params, fmt=Vocabulary.FORMAT_BINARY_PICKLE):
     label_vocab = 'vocab_{}_{}_label.{}'.format(model_name, h_params.input_unit, ext)
 
     return os.path.join(data_path, unit_vocab), os.path.join(data_path, label_vocab)
-
-
-def _unicode_tensor(tensor):
-    return np.char.decode(tensor.numpy().astype('S'), 'utf-8')
 
 
 def main():
@@ -67,8 +48,7 @@ def main():
         help='Path to train .txt.gz files')
 
     argv, _ = parser.parse_known_args()
-    if not os.path.exists(argv.data_path) or not os.path.isdir(argv.data_path):
-        raise ValueError('Wrong train dataset path')
+    assert os.path.exists(argv.data_path) and os.path.isdir(argv.data_path), 'Wrong train dataset path'
 
     tf.get_logger().setLevel(logging.INFO)
 
@@ -80,17 +60,12 @@ def main():
     unit_vocab, label_vocab = extract_vocab(argv.data_path, h_params)
 
     tf.get_logger().info('Saving vocabularies to {}'.format(argv.data_path))
-    unit_pkl, label_pkl = vocab_names(argv.data_path, h_params)
+    unit_pkl, label_pkl = _vocab_names(argv.data_path, h_params)
     unit_vocab.save(unit_pkl)
     label_vocab.save(label_pkl)
 
-    unit_tsv, label_tsv = vocab_names(argv.data_path, h_params, Vocabulary.FORMAT_TSV_WITH_HEADERS)
+    unit_tsv, label_tsv = _vocab_names(argv.data_path, h_params, Vocabulary.FORMAT_TSV_WITH_HEADERS)
     unit_vocab.save(unit_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
     label_vocab.save(label_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
-
-    if 'dense' == h_params.embed_type:
-        unit1k_vocab, _ = unit_vocab.split_by_size(1000)
-        unit1k_tsv = unit_tsv[:-4] + '1k' + unit_tsv[-4:]
-        unit1k_vocab.save(unit1k_tsv, Vocabulary.FORMAT_TSV_WITH_HEADERS)
 
     tf.get_logger().info('Vocabularies saved to {}'.format(argv.data_path))

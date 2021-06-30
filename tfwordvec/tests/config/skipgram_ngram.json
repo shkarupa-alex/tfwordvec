@@ -1,7 +1,7 @@
 {
   "input_unit": "ngram",
-  "unit_freq": 16,
-  "label_freq": 4,
+  "unit_freq": 2,
+  "label_freq": 3,
   "vect_model": "skipgram",
   "window_size": 5,
   "samp_thold": 1e-1,

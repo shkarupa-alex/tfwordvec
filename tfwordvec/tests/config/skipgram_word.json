@@ -1,7 +1,7 @@
 {
   "input_unit": "word",
-  "unit_freq": 4,
-  "label_freq": 4,
+  "unit_freq": 2,
+  "label_freq": 3,
   "embed_type": "adapt",
   "aemb_cutoff": [2],
   "vect_model": "skipgram",
