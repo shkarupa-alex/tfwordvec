@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.python.keras import keras_parameterized, testing_utils
+from keras import layers, keras_parameterized, testing_utils
 from ..layer import CbowContext
 
 
@@ -9,7 +9,7 @@ class CbowContextTest(keras_parameterized.TestCase):
     #     output_data = testing_utils.layer_test(
     #         CbowContext,
     #         kwargs={
-    #             'layer': tf.keras.layers.Lambda(lambda x: tf.expand_dims(tf.strings.reduce_join(
+    #             'layer': layers.Lambda(lambda x: tf.expand_dims(tf.strings.reduce_join(
     #                 x['units'], separator='_', axis=-1), axis=-1), output_shape=(None, 1)),
     #             'window': 1,
     #             'position': True
@@ -28,7 +28,7 @@ class CbowContextTest(keras_parameterized.TestCase):
             ['1', '2345', '6789'],
         ], dtype=tf.string)
         layer = CbowContext(
-            layer=tf.keras.layers.Lambda(
+            layer=layers.Lambda(
                 lambda x: tf.expand_dims(
                     tf.strings.reduce_join(x['units'], separator='_', axis=-1),
                     axis=-1)

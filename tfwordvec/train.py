@@ -3,6 +3,8 @@ import logging
 import os
 import tensorflow as tf
 from nlpvocab import Vocabulary
+from keras import backend, callbacks, optimizers, models
+from keras.mixed_precision import policy as mixed_precision
 from tensorflow_addons.optimizers import Lookahead, RectifiedAdam
 from tfmiss.keras.callbacks import LRFinder
 from .hparam import build_hparams
@@ -19,19 +21,19 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
         tf.config.optimizer.set_jit(True)
 
     if h_params.mixed_fp16:
-        tf.keras.mixed_precision.set_global_policy('mixed_float16')
+        mixed_precision.set_policy('mixed_float16')
 
     if findlr_steps:
         lr_finder = LRFinder(findlr_steps)
-        callbacks = [lr_finder]
+        call_backs = [lr_finder]
     else:
         lr_finder = None
-        callbacks = [
-            tf.keras.callbacks.TensorBoard(
+        call_backs = [
+            callbacks.TensorBoard(
                 os.path.join(model_path, 'logs'),
                 update_freq=1000,
                 profile_batch='140, 160'),
-            tf.keras.callbacks.ModelCheckpoint(
+            callbacks.ModelCheckpoint(
                 os.path.join(model_path, 'train'),
                 monitor='loss',
                 verbose=True,
@@ -41,8 +43,8 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     if 'ranger' == h_params.train_optim.lower():
         optimizer = Lookahead(RectifiedAdam(h_params.learn_rate))
     else:
-        optimizer = tf.keras.optimizers.get(h_params.train_optim)
-        tf.keras.backend.set_value(optimizer.lr, h_params.learn_rate)
+        optimizer = optimizers.get(h_params.train_optim)
+        backend.set_value(optimizer.lr, h_params.learn_rate)
 
     unit_path, label_path = _vocab_names(data_path, h_params)
     unit_vocab = Vocabulary.load(unit_path)
@@ -51,7 +53,7 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
 
     if os.path.isdir(os.path.join(model_path, 'train')):
         tf.get_logger().info('Previous training found. Loading pretrained model.')
-        model = tf.keras.models.load_model(os.path.join(model_path, 'train'))  # TODO: check
+        model = models.load_model(os.path.join(model_path, 'train'))  # TODO: check
     else:
         tf.get_logger().info('No previous training found. Creating model from scratch.')
         model = build_model(h_params, unit_vocab, label_vocab)
@@ -64,7 +66,7 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     model.fit(
         dataset,
         epochs=1 if findlr_steps > 0 else h_params.num_epochs,
-        callbacks=callbacks,
+        callbacks=call_backs,
         steps_per_epoch=findlr_steps if findlr_steps > 0 else None
     )
 
