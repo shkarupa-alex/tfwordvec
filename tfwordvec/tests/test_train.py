@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import tensorflow as tf
+from keras.mixed_precision import policy as mixed_precision
 from ..train import train_model
 
 
@@ -14,12 +15,12 @@ class TestTrainModel(tf.test.TestCase):
         self.data_dir = os.path.join(os.path.dirname(__file__), 'data')
         self.params_dir = os.path.join(os.path.dirname(__file__), 'config')
         self.model_dir = tempfile.mkdtemp()
-        self.default_policy = tf.keras.mixed_precision.global_policy()
+        self.default_policy = mixed_precision.global_policy()
 
     def tearDown(self):
         super().tearDown()
         shutil.rmtree(self.model_dir, ignore_errors=True)
-        tf.keras.mixed_precision.set_global_policy(self.default_policy)
+        mixed_precision.set_policy(self.default_policy)
 
     def test_char_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_char.json')

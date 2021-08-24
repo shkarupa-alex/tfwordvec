@@ -3,6 +3,8 @@ import os
 import shutil
 import tempfile
 import tensorflow as tf
+from keras import models
+from keras.mixed_precision import policy as mixed_precision
 from tensorflow_hub import KerasLayer
 from ..train import train_model
 from ..hub import export_encoder
@@ -16,12 +18,12 @@ class TestExportEncoders(tf.test.TestCase):
         self.data_dir = os.path.join(os.path.dirname(__file__), 'data')
         self.params_dir = os.path.join(os.path.dirname(__file__), 'config')
         self.model_dir = tempfile.mkdtemp()
-        self.default_policy = tf.keras.mixed_precision.global_policy()
+        self.default_policy = mixed_precision.global_policy()
 
     def tearDown(self):
         super().tearDown()
         shutil.rmtree(self.model_dir, ignore_errors=True)
-        tf.keras.mixed_precision.set_global_policy(self.default_policy)
+        mixed_precision.set_policy(self.default_policy)
 
     def test_char_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_char.json')
@@ -42,7 +44,7 @@ class TestExportEncoders(tf.test.TestCase):
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
         infered = embed(['Время'])[0]
 
-        model = tf.keras.models.load_model(os.path.join(self.model_dir, 'train'))
+        model = models.load_model(os.path.join(self.model_dir, 'train'))
         embedding = model.get_layer('context_encoder').get_layer('unit_encoding') \
             .layer.get_layer('unit_embedding').embed
         actual = embedding(tf.constant([6], dtype=tf.int32))[0]

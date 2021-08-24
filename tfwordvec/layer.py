@@ -1,16 +1,17 @@
 import tensorflow as tf
-from tensorflow.keras.layers import InputSpec, Layer, Wrapper
-from tensorflow.python.keras.utils import tf_utils
+from keras import layers
+from keras.utils.generic_utils import register_keras_serializable
+from keras.utils.tf_utils import shape_type_conversion
 from tfmiss.text import normalize_unicode, lower_case, zero_digits
 from tfmiss.preprocessing import cbow_context
 from .input import BOS_MARK, EOS_MARK, UNK_MARK
 
 
-@tf.keras.utils.register_keras_serializable(package='WordVec')
-class CbowContext(Wrapper):
+@register_keras_serializable(package='WordVec')
+class CbowContext(layers.Wrapper):
     def __init__(self, layer, window, position, **kwargs):
         super().__init__(layer, **kwargs)
-        self.input_spec = InputSpec(dtype='string', ndim=2)
+        self.input_spec = layers.InputSpec(dtype='string', ndim=2)
         self._supports_ragged_inputs = True
 
         self.window = window
@@ -43,7 +44,7 @@ class CbowContext(Wrapper):
 
         return outputs
 
-    @tf_utils.shape_type_conversion
+    @shape_type_conversion
     def compute_output_shape(self, input_shape):
         return input_shape + self.layer.compute_output_shape(input_shape)[1:]
 

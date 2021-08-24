@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-TREEBANKS_URL="https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/11234/1-2988/ud-treebanks-v2.4.tgz?sequence=4&isAllowed=y"
-TREEBANKS_NAME="ud-treebanks-v2.4"
+TREEBANKS_URL="https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/11234/1-3687/ud-treebanks-v2.8.tgz?sequence=1&isAllowed=y"
+TREEBANKS_NAME="ud-treebanks-v2.8"
 
 if [[ ! -f "${TREEBANKS_NAME}.tgz" ]]; then
   echo "Downloading..."
@@ -31,8 +31,8 @@ mkdir "${DATASET_DIR}"
 
       # Checking for no-space languages
       for FILE in "${DIR}"/*.conllu ; do
-        BREAKS=$(grep -E -c "_$" < "${FILE}")
-        JOINS=$(grep -c "SpaceAfter=No" < "${FILE}")
+        BREAKS=$(cat "${FILE}" | grep "\t" | grep -v "# " | grep -v -c "SpaceAfter=No" < "${FILE}")
+        JOINS=$(cat "${FILE}" | grep "\t" | grep -v "# " | grep -c "SpaceAfter=No" < "${FILE}")
         echo "${DIR}/${FILE} ${BREAKS} ${JOINS}"
       done
     fi;
@@ -41,11 +41,13 @@ mkdir "${DATASET_DIR}"
 
 
 echo "Checking..."
-rm "${DATASET_DIR}/UD_Japanese-BCCWJ.txt"
 rm "${DATASET_DIR}/UD_Arabic-NYUAD.txt"
 rm "${DATASET_DIR}/UD_English-ESL.txt"
+rm "${DATASET_DIR}/UD_English-GUMReddit.txt"
 rm "${DATASET_DIR}/UD_French-FTB.txt"
 rm "${DATASET_DIR}/UD_Hindi_English-HIENCS.txt"
+rm "${DATASET_DIR}/UD_Japanese-BCCWJ.txt"
+rm "${DATASET_DIR}/UD_Mbya_Guarani-Dooley.txt"
 grep -R "___" "${DATASET_DIR}/" | sed "s/:.*//" | uniq -c
 grep -R "_ _ _" "${DATASET_DIR}/" | sed "s/:.*//" | uniq -c
 
