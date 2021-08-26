@@ -48,12 +48,11 @@ def train_dataset(src_path, h_params, label_vocab):
     if h_params.vect_model in {'cbow', 'cbowpos'} and h_params.bucket_cbow:
         buck_bounds = list(range(2, h_params.window_size * 2 + 2))
         buck_bounds, batch_sizes, _ = estimate_bucket_pipeline(buck_bounds, h_params.batch_size, safe=False)
-        dataset = dataset.apply(tf.data.experimental.bucket_by_sequence_length(
+        dataset = dataset.bucket_by_sequence_length(
             lambda features, *args: features['lengths'],
             buck_bounds,
             batch_sizes,
-            no_padding=True
-        ))
+            no_padding=True)
     else:
         dataset = dataset.batch(h_params.batch_size)
 
