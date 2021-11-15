@@ -4,6 +4,7 @@ from nlpvocab import Vocabulary
 from tfmiss.preprocessing import skip_gram, cont_bow, down_sample
 from tfmiss.text import normalize_unicode, zero_digits, split_chars, lower_case
 from tfmiss.training import estimate_bucket_pipeline
+from .config import InputUnit, VectModel, ModelHead
 
 UNK_MARK = '[UNK]'
 BOS_MARK = '[BOS]'
@@ -11,17 +12,17 @@ EOS_MARK = '[EOS]'
 RESERVED = [UNK_MARK, BOS_MARK, EOS_MARK]
 
 
-def train_dataset(src_path, h_params, label_vocab):
-    label_table, label_last = _label_lookup(label_vocab, h_params)
+def train_dataset(src_path, config, label_vocab):
+    label_table, label_last = _label_lookup(label_vocab, config)
 
     def _pre_transform(sentences):
-        units = _transform_split(sentences, h_params)
+        units = _transform_split(sentences, config)
         units = down_sample(
             source=units,
             freq_vocab=label_vocab,
-            threshold=h_params.samp_thold,
-            min_freq=h_params.label_freq)
-        features, labels = _transform_model(units, h_params)
+            threshold=config.samp_thold,
+            min_freq=config.label_freq)
+        features, labels = _transform_model(units, config)
 
         labels = label_table.lookup(labels)
         features['filters'] = tf.not_equal(labels, label_last)
@@ -32,29 +33,29 @@ def train_dataset(src_path, h_params, label_vocab):
         features.pop('filters', None)
         features.pop('lengths', None)
 
-        if 'sm' == h_params.model_head:
+        if ModelHead.SOFTMAX == config.model_head:
             return features, labels
 
         features['labels'] = labels
 
         return features
 
-    dataset = _raw_dataset(src_path, h_params)
+    dataset = _raw_dataset(src_path, config)
     dataset = dataset.map(_pre_transform, tf.data.AUTOTUNE)
     dataset = dataset.shuffle(1000)
     dataset = dataset.unbatch()
     dataset = dataset.filter(lambda features, *args: features['filters'])
 
-    if h_params.vect_model in {'cbow', 'cbowpos'} and h_params.bucket_cbow:
-        buck_bounds = list(range(2, h_params.window_size * 2 + 2))
-        buck_bounds, batch_sizes, _ = estimate_bucket_pipeline(buck_bounds, h_params.batch_size, safe=False)
+    if config.vect_model in {VectModel.CBOW, VectModel.CBOWPOS} and config.bucket_cbow:
+        buck_bounds = list(range(2, config.window_size * 2 + 2))
+        buck_bounds, batch_sizes, _ = estimate_bucket_pipeline(buck_bounds, config.batch_size, safe=False)
         dataset = dataset.bucket_by_sequence_length(
             lambda features, *args: features['lengths'],
             buck_bounds,
             batch_sizes,
             no_padding=True)
     else:
-        dataset = dataset.batch(h_params.batch_size)
+        dataset = dataset.batch(config.batch_size)
 
     dataset = dataset.map(_post_transform, num_parallel_calls=tf.data.AUTOTUNE)
     dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
@@ -62,36 +63,36 @@ def train_dataset(src_path, h_params, label_vocab):
     return dataset
 
 
-def vocab_dataset(src_path, h_params):
+def vocab_dataset(src_path, config):
     def _transform(sentences):
-        return _transform_split(sentences, h_params)
+        return _transform_split(sentences, config)
 
-    dataset = _raw_dataset(src_path, h_params)
+    dataset = _raw_dataset(src_path, config)
     dataset = dataset.map(_transform, tf.data.AUTOTUNE)
     dataset = dataset.prefetch(tf.data.AUTOTUNE)
 
     return dataset
 
 
-def _raw_dataset(src_path, h_params):
+def _raw_dataset(src_path, config):
     wild_card = os.path.join(src_path, '*.txt.gz')
     fileset = tf.data.Dataset.list_files(wild_card)
 
     dataset = fileset.interleave(
-        lambda gz_file: _line_datset(gz_file, h_params),
+        lambda gz_file: _line_datset(gz_file, config),
         cycle_length=tf.data.AUTOTUNE,
         num_parallel_calls=tf.data.AUTOTUNE)
 
     dataset = dataset.filter(lambda sentence: tf.strings.length(tf.strings.strip(sentence)) > 0)
-    dataset = dataset.batch(h_params.batch_size)
+    dataset = dataset.batch(config.batch_size)
 
     return dataset
 
 
-def _line_datset(gz_file, h_params):
+def _line_datset(gz_file, config):
     dataset = tf.data.TextLineDataset(gz_file, 'GZIP', None, tf.data.AUTOTUNE)
 
-    if 'char' == h_params.input_unit:
+    if InputUnit.CHAR == config.input_unit:
         dataset = dataset.batch(2)
         dataset = dataset.map(
             lambda rows: tf.strings.reduce_join(rows, separator='\n'),
@@ -100,18 +101,18 @@ def _line_datset(gz_file, h_params):
     return dataset
 
 
-def _transform_split(sentences, h_params):
+def _transform_split(sentences, config):
     sentences = normalize_unicode(sentences, 'NFKC')
-    if 'char' != h_params.input_unit:
+    if InputUnit.CHAR != config.input_unit:
         sentences = tf.strings.regex_replace(sentences, r'\s+', ' ')
     sentences = tf.strings.strip(sentences)
 
-    if h_params.lower_case:
+    if config.lower_case:
         sentences = lower_case(sentences)
-    if h_params.zero_digits:
+    if config.zero_digits:
         sentences = zero_digits(sentences)
 
-    if 'char' == h_params.input_unit:
+    if InputUnit.CHAR == config.input_unit:
         units = split_chars(sentences)
     else:
         units = tf.strings.split(sentences, sep=' ')
@@ -124,35 +125,35 @@ def _transform_split(sentences, h_params):
     return units
 
 
-def _transform_model(units, h_params):
+def _transform_model(units, config):
     features = {}
-    if h_params.vect_model in {'cbow', 'cbowpos'}:
-        targets, contexts, positions = cont_bow(units, h_params.window_size)
+    if config.vect_model in {VectModel.CBOW, VectModel.CBOWPOS}:
+        targets, contexts, positions = cont_bow(units, config.window_size)
 
-        if h_params.bucket_cbow:
+        if config.bucket_cbow:
             features['lengths'] = tf.cast(contexts.row_lengths(), tf.int32)
 
-        if 'cbowpos' == h_params.vect_model:
+        if VectModel.CBOWPOS == config.vect_model:
             positions = tf.ragged.map_flat_values(
                 lambda flat: tf.where(
                     tf.greater(flat, 0),
                     flat - 1,
                     flat
-                ) + h_params.window_size,
+                ) + config.window_size,
                 positions)
             features['positions'] = positions
     else:
-        targets, contexts = skip_gram(units, h_params.window_size)
+        targets, contexts = skip_gram(units, config.window_size)
 
     features['units'] = contexts
 
     return features, targets
 
 
-def _label_lookup(label_vocab, h_params):
+def _label_lookup(label_vocab, config):
     assert isinstance(label_vocab, Vocabulary), 'Wrong label vocabulary type'
 
-    top, _ = label_vocab.split_by_frequency(h_params.label_freq)
+    top, _ = label_vocab.split_by_frequency(config.label_freq)
     keys = top.tokens() + [UNK_MARK]
     values = tf.range(len(keys), dtype=tf.int64)
     last = len(keys) - 1

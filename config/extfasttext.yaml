@@ -1,0 +1,31 @@
+input_unit: NGRAM
+lower_case: true
+zero_digits: true
+unit_freq: 20
+label_freq: 40
+ngram_minn: 3
+ngram_maxn: 5
+ngram_self: ALWAYS
+ngram_comb: MEAN
+vect_model: CBOWPOS
+window_size: 5
+samp_thold: 0.001
+embed_size: 256
+embed_type: ADAPTIVE
+aembd_cutoff:
+- 1000
+- 10000
+aembd_factor: 4
+model_head: ADAPTIVE
+asmax_cutoff:
+- 1000
+- 10000
+asmax_factor: 4
+asmax_dropout: 0.0
+batch_size: 1024
+bucket_cbow: true
+num_epochs: 5
+mixed_fp16: false
+use_jit: true
+train_optim: Adam
+learn_rate: 0.05

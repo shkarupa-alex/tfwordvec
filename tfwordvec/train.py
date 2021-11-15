@@ -7,21 +7,21 @@ from keras import backend, callbacks, optimizers, models
 from keras.mixed_precision import policy as mixed_precision
 from tensorflow_addons.optimizers import Lookahead, RectifiedAdam
 from tfmiss.keras.callbacks import LRFinder
-from .hparam import build_hparams
+from .config import ModelHead, build_config
 from .input import train_dataset
 from .model import build_model
 from .vocab import _vocab_names
 
 
 def train_model(data_path, params_path, model_path, findlr_steps=0):
-    h_params = build_hparams(params_path)
+    config = build_config(params_path)
 
-    if h_params.use_jit:
+    if config.use_jit:
         os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit'
-        tf.config.optimizer.set_jit(True)
+        tf.config.optimizer.set_jit('autoclustering')
 
-    if h_params.mixed_fp16:
-        mixed_precision.set_policy('mixed_float16')
+    if config.mixed_fp16:
+        mixed_precision.set_global_policy('mixed_float16')
 
     if findlr_steps:
         lr_finder = LRFinder(findlr_steps)
@@ -40,32 +40,32 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
                 options=tf.saved_model.SaveOptions(namespace_whitelist=['Addons', 'Miss']))
         ]
 
-    if 'ranger' == h_params.train_optim.lower():
-        optimizer = Lookahead(RectifiedAdam(h_params.learn_rate))
+    if 'ranger' == config.train_optim.lower():
+        optimizer = Lookahead(RectifiedAdam(config.learn_rate))
     else:
-        optimizer = optimizers.get(h_params.train_optim)
-        backend.set_value(optimizer.lr, h_params.learn_rate)
+        optimizer = optimizers.get(config.train_optim)
+        backend.set_value(optimizer.lr, config.learn_rate)
 
-    unit_path, label_path = _vocab_names(data_path, h_params)
+    unit_path, label_path = _vocab_names(data_path, config)
     unit_vocab = Vocabulary.load(unit_path)
     label_vocab = Vocabulary.load(label_path)
-    dataset = train_dataset(data_path, h_params, label_vocab)
+    dataset = train_dataset(data_path, config, label_vocab)
 
     if os.path.isdir(os.path.join(model_path, 'train')):
         tf.get_logger().info('Previous training found. Loading pretrained model.')
         model = models.load_model(os.path.join(model_path, 'train'))  # TODO: check
     else:
         tf.get_logger().info('No previous training found. Creating model from scratch.')
-        model = build_model(h_params, unit_vocab, label_vocab)
+        model = build_model(config, unit_vocab, label_vocab)
         model.compile(
             optimizer=optimizer,
-            loss='sparse_categorical_crossentropy' if 'sm' == h_params.model_head else None
+            loss='sparse_categorical_crossentropy' if ModelHead.SOFTMAX == config.model_head else None
         )
 
     model.summary()
     model.fit(
         dataset,
-        epochs=1 if findlr_steps > 0 else h_params.num_epochs,
+        epochs=1 if findlr_steps > 0 else config.num_epochs,
         callbacks=call_backs,
         steps_per_epoch=findlr_steps if findlr_steps > 0 else None
     )
@@ -80,7 +80,7 @@ def main():
     parser.add_argument(
         'hyper_params',
         type=argparse.FileType('rb'),
-        help='JSON-encoded model hyperparameters file')
+        help='YAML-encoded model hyperparameters file')
     parser.add_argument(
         'data_path',
         type=str,

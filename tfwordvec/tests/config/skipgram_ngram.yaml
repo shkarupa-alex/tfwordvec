@@ -1,0 +1,8 @@
+input_unit: NGRAM
+unit_freq: 2
+label_freq: 3
+vect_model: SKIPGRAM
+window_size: 5
+samp_thold: 1e-1
+model_head: SOFTMAX
+num_epochs: 1
