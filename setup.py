@@ -5,7 +5,7 @@ from __future__ import print_function
 from pathlib import Path
 from setuptools import setup, find_packages
 
-__VERSION__ = '1.4.0'
+__VERSION__ = '1.4.1'
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
