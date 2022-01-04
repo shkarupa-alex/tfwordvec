@@ -117,7 +117,7 @@ def build_config(custom):
     assert conf.max_len is None or 3 < conf.max_len, 'Bad maximum word length'
     assert 0 < conf.unit_freq, 'Bad minimum unit frequency'
     if InputUnit.NGRAM == conf.input_unit:
-        assert 0 < conf.ngram_minn < conf.ngram_maxn, 'Bad min/max ngram sizes'
+        assert 0 < conf.ngram_minn <= conf.ngram_maxn, 'Bad min/max ngram sizes'
     if InputUnit.BPE == conf.input_unit:
         assert 0 < conf.bpe_size, 'Bad BPE vocabulary size'
         assert 0 < conf.bpe_chars, 'Bad BPE chars count'
