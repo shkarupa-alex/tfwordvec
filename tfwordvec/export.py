@@ -6,15 +6,15 @@ from gensim.models.keyedvectors import Vocab
 from gensim.models.utils_any2vec import _save_word2vec_format
 from nlpvocab import Vocabulary
 from tensorflow_hub import KerasLayer
-from .hparam import build_hparams
+from .config import build_config
 from .input import RESERVED
 
 
 def export_vectors(vocab_path, params_path, model_path):
-    h_params = build_hparams(params_path)
+    config = build_config(params_path)
 
     unit_vocab = Vocabulary.load(vocab_path)
-    unit_top, _ = unit_vocab.split_by_frequency(h_params.unit_freq)
+    unit_top, _ = unit_vocab.split_by_frequency(config.unit_freq)
 
     units = RESERVED + [u for u in unit_top.tokens() if u not in RESERVED]
     embed = KerasLayer(os.path.join(model_path, 'unit_encoder'))
@@ -30,7 +30,7 @@ def main():
     parser.add_argument(
         'hyper_params',
         type=argparse.FileType('rb'),
-        help='JSON-encoded model hyperparameters file')
+        help='YAML-encoded model hyperparameters file')
     parser.add_argument(
         'model_path',
         type=str,

@@ -3,12 +3,12 @@ import logging
 import os
 import tensorflow as tf
 from keras import layers, models
-from .hparam import build_hparams
+from .config import VectModel, build_config
 from .layer import CbowContext
 
 
 def export_encoder(params_path, model_path):
-    h_params = build_hparams(params_path)
+    config = build_config(params_path)
 
     model = models.load_model(os.path.join(model_path, 'train'))
     save_options = tf.saved_model.SaveOptions(namespace_whitelist=['Miss'])
@@ -20,11 +20,11 @@ def export_encoder(params_path, model_path):
     unit_model.save(os.path.join(model_path, 'unit_encoder'), options=save_options, include_optimizer=False)
     tf.get_logger().info('Unit encoder saved to {}'.format(os.path.join(model_path, 'unit_encoder')))
 
-    if h_params.vect_model in {'cbow', 'cbowpos'}:
+    if config.vect_model in {VectModel.CBOW, VectModel.CBOWPOS}:
         context_encoder = model.get_layer('context_encoder')
         context_inputs = layers.Input(name='units', shape=(None,), ragged=True, dtype=tf.string)
-        context_outputs = CbowContext(layer=context_encoder, window=h_params.window_size,
-                                      position='cbowpos' == h_params.vect_model)(context_inputs)
+        context_outputs = CbowContext(layer=context_encoder, window=config.window_size,
+                                      position=VectModel.CBOWPOS == config.vect_model)(context_inputs)
         context_model = models.Model(inputs=context_inputs, outputs=context_outputs)
         context_model.save(os.path.join(model_path, 'context_encoder'), options=save_options, include_optimizer=False)
         tf.get_logger().info('Context encoder saved to {}'.format(os.path.join(model_path, 'context_encoder')))
@@ -37,7 +37,7 @@ def main():
     parser.add_argument(
         'hyper_params',
         type=argparse.FileType('rb'),
-        help='JSON-encoded model hyperparameters file')
+        help='YAML-encoded model hyperparameters file')
     parser.add_argument(
         'model_path',
         type=str,

@@ -2,9 +2,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from pathlib import Path
 from setuptools import setup, find_packages
 
-__VERSION__ = '1.4.0'
+__VERSION__ = '1.4.1'
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
@@ -20,16 +21,8 @@ setup(
     author_email='shkarupa.alex@gmail.com',
     license='MIT',
     packages=find_packages(),
-    python_requires='>=3.6.0',
-    install_requires=[
-        'tensorflow>=2.6.0',
-        'tensorflow-addons>=0.14.0',
-        'tensorflow-hub>=0.12.0',
-        'keras>=2.6.0',
-        'tfmiss>=0.14.0',
-        'nlpvocab>=1.2.0',
-        'gensim>=3.8.1'
-    ],
+    python_requires='>=3.7.0',
+    install_requires=Path("requirements.txt").read_text().splitlines(),
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     entry_points={

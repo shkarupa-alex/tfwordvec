@@ -23,10 +23,10 @@ class TestExportEncoders(tf.test.TestCase):
     def tearDown(self):
         super().tearDown()
         shutil.rmtree(self.model_dir, ignore_errors=True)
-        mixed_precision.set_policy(self.default_policy)
+        mixed_precision.set_global_policy(self.default_policy)
 
     def test_char_skipgram(self):
-        params_path = os.path.join(self.params_dir, 'skipgram_char.json')
+        params_path = os.path.join(self.params_dir, 'skipgram_char.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -36,7 +36,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 256), vectors.shape)
 
     def test_word_skipgram(self):
-        params_path = os.path.join(self.params_dir, 'skipgram_word.json')
+        params_path = os.path.join(self.params_dir, 'skipgram_word.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -52,7 +52,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertAllEqual(actual, infered)
 
     def test_ngram_skipgram(self):
-        params_path = os.path.join(self.params_dir, 'skipgram_ngram.json')
+        params_path = os.path.join(self.params_dir, 'skipgram_ngram.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -62,7 +62,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 256), vectors.shape)
 
     def test_bpe_skipgram(self):
-        params_path = os.path.join(self.params_dir, 'skipgram_bpe.json')
+        params_path = os.path.join(self.params_dir, 'skipgram_bpe.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -72,7 +72,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 256), vectors.shape)
 
     def test_cnn_skipgram(self):
-        params_path = os.path.join(self.params_dir, 'skipgram_cnn.json')
+        params_path = os.path.join(self.params_dir, 'skipgram_cnn.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -82,7 +82,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 256), vectors.shape)
 
     def test_char_cbow(self):
-        params_path = os.path.join(self.params_dir, 'cbow_char.json')
+        params_path = os.path.join(self.params_dir, 'cbow_char.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -97,7 +97,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 2, 256), vectors.shape)
 
     def test_word_cbow(self):
-        params_path = os.path.join(self.params_dir, 'cbow_word.json')
+        params_path = os.path.join(self.params_dir, 'cbow_word.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -112,7 +112,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 2, 256), vectors.shape)
 
     def test_ngram_cbow(self):
-        params_path = os.path.join(self.params_dir, 'cbow_ngram.json')
+        params_path = os.path.join(self.params_dir, 'cbow_ngram.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -127,7 +127,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 2, 256), vectors.shape)
 
     def test_bpe_cbow(self):
-        params_path = os.path.join(self.params_dir, 'cbow_bpe.json')
+        params_path = os.path.join(self.params_dir, 'cbow_bpe.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -142,7 +142,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 2, 256), vectors.shape)
 
     def test_cnn_cbow(self):
-        params_path = os.path.join(self.params_dir, 'cbow_cnn.json')
+        params_path = os.path.join(self.params_dir, 'cbow_cnn.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -157,7 +157,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 2, 256), vectors.shape)
 
     def test_char_cbowpos(self):
-        params_path = os.path.join(self.params_dir, 'cbowpos_char.json')
+        params_path = os.path.join(self.params_dir, 'cbowpos_char.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -172,7 +172,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 2, 256), vectors.shape)
 
     def test_word_cbowpos(self):
-        params_path = os.path.join(self.params_dir, 'cbowpos_word.json')
+        params_path = os.path.join(self.params_dir, 'cbowpos_word.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -187,7 +187,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 2, 256), vectors.shape)
 
     def test_ngram_cbowpos(self):
-        params_path = os.path.join(self.params_dir, 'cbowpos_ngram.json')
+        params_path = os.path.join(self.params_dir, 'cbowpos_ngram.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -202,7 +202,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 2, 256), vectors.shape)
 
     def test_bpe_cbowpos(self):
-        params_path = os.path.join(self.params_dir, 'cbowpos_bpe.json')
+        params_path = os.path.join(self.params_dir, 'cbowpos_bpe.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
@@ -217,7 +217,7 @@ class TestExportEncoders(tf.test.TestCase):
         self.assertTupleEqual((2, 2, 256), vectors.shape)
 
     def test_cnn_cbowpos(self):
-        params_path = os.path.join(self.params_dir, 'cbowpos_cnn.json')
+        params_path = os.path.join(self.params_dir, 'cbowpos_cnn.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
         export_encoder(params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))

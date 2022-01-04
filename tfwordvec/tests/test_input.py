@@ -2,7 +2,7 @@ import numpy as np
 import os
 import tensorflow as tf
 from nlpvocab import Vocabulary
-from ..hparam import build_hparams
+from ..config import InputUnit, VectModel, ModelHead, build_config
 from ..input import train_dataset, vocab_dataset
 
 
@@ -20,13 +20,13 @@ class TestTrainDataset(tf.test.TestCase):
             format=Vocabulary.FORMAT_TSV_WITH_HEADERS)
 
     def test_char_skipgram_sm(self):
-        h_params = build_hparams({
-            'input_unit': 'char',
-            'vect_model': 'skipgram',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.CHAR,
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.SOFTMAX,
             'batch_size': 8
         })
-        dataset = train_dataset(self.data_dir, h_params, self.char_vocab)
+        dataset = train_dataset(self.data_dir, config, self.char_vocab)
 
         for row in dataset.take(1):
             self.assertLen(row, 2)
@@ -44,14 +44,14 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.int64)
 
     def test_char_cbow_ss(self):
-        h_params = build_hparams({
-            'input_unit': 'char',
-            'vect_model': 'cbow',
-            'model_head': 'ss',
+        config = build_config({
+            'input_unit': InputUnit.CHAR,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.SAMPLED,
             'batch_size': 6,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, h_params, self.char_vocab)
+        dataset = train_dataset(self.data_dir, config, self.char_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -66,14 +66,14 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(features['labels'].dtype, tf.int64)
 
     def test_char_cbowpos_nce(self):
-        h_params = build_hparams({
-            'input_unit': 'char',
-            'vect_model': 'cbowpos',
-            'model_head': 'nce',
+        config = build_config({
+            'input_unit': InputUnit.CHAR,
+            'vect_model': VectModel.CBOWPOS,
+            'model_head': ModelHead.NCE,
             'batch_size': 10,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, h_params, self.char_vocab)
+        dataset = train_dataset(self.data_dir, config, self.char_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -92,13 +92,13 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(features['positions'].dtype, tf.int32)
 
     def test_word_skipgram_asm(self):
-        h_params = build_hparams({
-            'input_unit': 'word',
-            'vect_model': 'skipgram',
-            'model_head': 'asm',
+        config = build_config({
+            'input_unit': InputUnit.WORD,
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.ADAPTIVE,
             'batch_size': 4
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -113,14 +113,14 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(features['labels'].dtype, tf.int64)
 
     def test_word_cbow_sm(self):
-        h_params = build_hparams({
-            'input_unit': 'word',
-            'vect_model': 'cbow',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.WORD,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.SOFTMAX,
             'batch_size': 6,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for row in dataset.take(1):
             self.assertLen(row, 2)
@@ -138,14 +138,14 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.int64)
 
     def test_word_cbowpos_ss(self):
-        h_params = build_hparams({
-            'input_unit': 'word',
-            'vect_model': 'cbowpos',
-            'model_head': 'ss',
+        config = build_config({
+            'input_unit': InputUnit.WORD,
+            'vect_model': VectModel.CBOWPOS,
+            'model_head': ModelHead.SAMPLED,
             'batch_size': 4,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -164,13 +164,13 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(features['positions'].dtype, tf.int32)
 
     def test_ngram_skipgram_nce(self):
-        h_params = build_hparams({
-            'input_unit': 'ngram',
-            'vect_model': 'skipgram',
-            'model_head': 'nce',
+        config = build_config({
+            'input_unit': InputUnit.NGRAM,
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.NCE,
             'batch_size': 8
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -185,14 +185,14 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(features['labels'].dtype, tf.int64)
 
     def test_ngram_cbow_asm(self):
-        h_params = build_hparams({
-            'input_unit': 'ngram',
-            'vect_model': 'cbow',
-            'model_head': 'asm',
+        config = build_config({
+            'input_unit': InputUnit.NGRAM,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.ADAPTIVE,
             'batch_size': 2,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -207,14 +207,14 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(features['labels'].dtype, tf.int64)
 
     def test_ngram_cbowpos_sm(self):
-        h_params = build_hparams({
-            'input_unit': 'ngram',
-            'vect_model': 'cbowpos',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.NGRAM,
+            'vect_model': VectModel.CBOWPOS,
+            'model_head': ModelHead.SOFTMAX,
             'batch_size': 2,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for row in dataset.take(1):
             self.assertLen(row, 2)
@@ -236,13 +236,13 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.int64)
 
     def test_bpe_skipgram_nce(self):
-        h_params = build_hparams({
-            'input_unit': 'bpe',
-            'vect_model': 'skipgram',
-            'model_head': 'nce',
+        config = build_config({
+            'input_unit': InputUnit.BPE,
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.NCE,
             'batch_size': 8
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -257,14 +257,14 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(features['labels'].dtype, tf.int64)
 
     def test_bpe_cbow_asm(self):
-        h_params = build_hparams({
-            'input_unit': 'bpe',
-            'vect_model': 'cbow',
-            'model_head': 'asm',
+        config = build_config({
+            'input_unit': InputUnit.BPE,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.ADAPTIVE,
             'batch_size': 2,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -279,14 +279,14 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(features['labels'].dtype, tf.int64)
 
     def test_bpe_cbowpos_sm(self):
-        h_params = build_hparams({
-            'input_unit': 'bpe',
-            'vect_model': 'cbowpos',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.BPE,
+            'vect_model': VectModel.CBOWPOS,
+            'model_head': ModelHead.SOFTMAX,
             'batch_size': 2,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for row in dataset.take(1):
             self.assertLen(row, 2)
@@ -308,13 +308,13 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.int64)
 
     def test_cnn_skipgram_nce(self):
-        h_params = build_hparams({
-            'input_unit': 'cnn',
-            'vect_model': 'skipgram',
-            'model_head': 'nce',
+        config = build_config({
+            'input_unit': InputUnit.CNN,
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.NCE,
             'batch_size': 8
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -329,14 +329,14 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(features['labels'].dtype, tf.int64)
 
     def test_cnn_cbow_asm(self):
-        h_params = build_hparams({
-            'input_unit': 'cnn',
-            'vect_model': 'cbow',
-            'model_head': 'asm',
+        config = build_config({
+            'input_unit': InputUnit.CNN,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.ADAPTIVE,
             'batch_size': 2,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -351,14 +351,14 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(features['labels'].dtype, tf.int64)
 
     def test_cnn_cbowpos_sm(self):
-        h_params = build_hparams({
-            'input_unit': 'cnn',
-            'vect_model': 'cbowpos',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.CNN,
+            'vect_model': VectModel.CBOWPOS,
+            'model_head': ModelHead.SOFTMAX,
             'batch_size': 2,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, h_params, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
         for row in dataset.take(1):
             self.assertLen(row, 2)
@@ -387,13 +387,13 @@ class TestVocabDataset(tf.test.TestCase):
         self.data_dir = os.path.join(os.path.dirname(__file__), 'data')
 
     def test_char_skipgram_sm(self):
-        h_params = build_hparams({
-            'input_unit': 'char',
-            'vect_model': 'skipgram',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.CHAR,
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.SOFTMAX,
             'batch_size': 6
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -401,14 +401,14 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_char_cbow_ss(self):
-        h_params = build_hparams({
-            'input_unit': 'char',
-            'vect_model': 'cbow',
-            'model_head': 'ss',
+        config = build_config({
+            'input_unit': InputUnit.CHAR,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.SAMPLED,
             'batch_size': 6,
             'bucket_cbow': False
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -416,14 +416,14 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_char_cbowpos_nce(self):
-        h_params = build_hparams({
-            'input_unit': 'char',
-            'vect_model': 'cbowpos',
-            'model_head': 'nce',
+        config = build_config({
+            'input_unit': InputUnit.CHAR,
+            'vect_model': VectModel.CBOWPOS,
+            'model_head': ModelHead.NCE,
             'batch_size': 10,
             'bucket_cbow': False
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -431,13 +431,13 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_word_skipgram_asm(self):
-        h_params = build_hparams({
-            'input_unit': 'word',
-            'vect_model': 'skipgram',
-            'model_head': 'asm',
+        config = build_config({
+            'input_unit': InputUnit.WORD,
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.ADAPTIVE,
             'batch_size': 4
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -445,14 +445,14 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_word_cbow_sm(self):
-        h_params = build_hparams({
-            'input_unit': 'word',
-            'vect_model': 'cbow',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.WORD,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.SOFTMAX,
             'batch_size': 6,
             'bucket_cbow': False
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -460,14 +460,14 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_word_cbowpos_ss(self):
-        h_params = build_hparams({
-            'input_unit': 'word',
-            'vect_model': 'cbowpos',
-            'model_head': 'ss',
+        config = build_config({
+            'input_unit': InputUnit.WORD,
+            'vect_model': VectModel.CBOWPOS,
+            'model_head': ModelHead.SAMPLED,
             'batch_size': 4,
             'bucket_cbow': False
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -475,13 +475,13 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_ngram_skipgram_nce(self):
-        h_params = build_hparams({
-            'input_unit': 'ngram',
-            'vect_model': 'skipgram',
-            'model_head': 'nce',
+        config = build_config({
+            'input_unit': InputUnit.NGRAM,
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.NCE,
             'batch_size': 8
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -489,14 +489,14 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_ngram_cbow_asm(self):
-        h_params = build_hparams({
-            'input_unit': 'ngram',
-            'vect_model': 'cbow',
-            'model_head': 'asm',
+        config = build_config({
+            'input_unit': InputUnit.NGRAM,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.ADAPTIVE,
             'batch_size': 2,
             'bucket_cbow': False
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -504,14 +504,14 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_ngram_cbowpos_sm(self):
-        h_params = build_hparams({
-            'input_unit': 'ngram',
-            'vect_model': 'cbowpos',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.NGRAM,
+            'vect_model': VectModel.CBOWPOS,
+            'model_head': ModelHead.SOFTMAX,
             'batch_size': 2,
             'bucket_cbow': False
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -519,13 +519,13 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_bpe_skipgram_sm(self):
-        h_params = build_hparams({
-            'input_unit': 'bpe',
-            'vect_model': 'skipgram',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.BPE,
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.SOFTMAX,
             'batch_size': 6
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -533,14 +533,14 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_bpe_cbow_ss(self):
-        h_params = build_hparams({
-            'input_unit': 'bpe',
-            'vect_model': 'cbow',
-            'model_head': 'ss',
+        config = build_config({
+            'input_unit': InputUnit.BPE,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.SAMPLED,
             'batch_size': 6,
             'bucket_cbow': False
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -548,15 +548,15 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_bpe_cbowpos_nce(self):
-        h_params = build_hparams({
-            'input_unit': 'bpe',
+        config = build_config({
+            'input_unit': InputUnit.BPE,
             'max_len': 5,
-            'vect_model': 'cbowpos',
-            'model_head': 'nce',
+            'vect_model': VectModel.CBOWPOS,
+            'model_head': ModelHead.NCE,
             'batch_size': 10,
             'bucket_cbow': False
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -564,13 +564,13 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_cnn_skipgram_sm(self):
-        h_params = build_hparams({
-            'input_unit': 'cnn',
-            'vect_model': 'skipgram',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.CNN,
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.SOFTMAX,
             'batch_size': 6
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -578,14 +578,14 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_cnn_cbow_ss(self):
-        h_params = build_hparams({
-            'input_unit': 'cnn',
-            'vect_model': 'cbow',
-            'model_head': 'ss',
+        config = build_config({
+            'input_unit': InputUnit.CNN,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.SAMPLED,
             'batch_size': 6,
             'bucket_cbow': False
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))
@@ -593,15 +593,15 @@ class TestVocabDataset(tf.test.TestCase):
             self.assertEqual(labels.dtype, tf.string)
 
     def test_cnn_cbowpos_nce(self):
-        h_params = build_hparams({
-            'input_unit': 'cnn',
+        config = build_config({
+            'input_unit': InputUnit.CNN,
             'max_len': 5,
-            'vect_model': 'cbowpos',
-            'model_head': 'nce',
+            'vect_model': VectModel.CBOWPOS,
+            'model_head': ModelHead.NCE,
             'batch_size': 10,
             'bucket_cbow': False
         })
-        dataset = vocab_dataset(self.data_dir, h_params)
+        dataset = vocab_dataset(self.data_dir, config)
 
         for labels in dataset.take(1):
             self.assertTrue(tf.is_tensor(labels))

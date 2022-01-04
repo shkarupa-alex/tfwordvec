@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import tensorflow as tf
-from ..hparam import build_hparams
+from ..config import InputUnit, VectModel, ModelHead, build_config
 from ..vocab import extract_vocab
 
 
@@ -13,12 +13,12 @@ class TestExtractVocab(tf.test.TestCase):
         self.data_dir = os.path.join(os.path.dirname(__file__), 'data')
 
     def test_char_skipgram(self):
-        h_params = build_hparams({
-            'input_unit': 'char',
-            'vect_model': 'skipgram',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.CHAR,
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.SOFTMAX,
         })
-        unit_vocab, label_vocab = extract_vocab(self.data_dir, h_params)
+        unit_vocab, label_vocab = extract_vocab(self.data_dir, config)
 
         expected_set = {
             '\n', ' ', '-', '.', '[BOS]', '[EOS]', 'а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к', 'л', 'м',
@@ -37,13 +37,13 @@ class TestExtractVocab(tf.test.TestCase):
         self.assertListEqual(expected_labels_top, label_vocab.most_common(15))
 
     def test_word_cbow(self):
-        h_params = build_hparams({
-            'input_unit': 'word',
-            'vect_model': 'cbow',
-            'model_head': 'ss',
+        config = build_config({
+            'input_unit': InputUnit.WORD,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.SAMPLED,
             'bucket_cbow': False
         })
-        unit_vocab, label_vocab = extract_vocab(self.data_dir, h_params)
+        unit_vocab, label_vocab = extract_vocab(self.data_dir, config)
 
         expected_units_top = [
             ('[BOS]', 51), ('[EOS]', 51), ('керри', 8), ('жириновского', 4), ('жириновский', 3), ('пайдер', 3),
@@ -58,14 +58,14 @@ class TestExtractVocab(tf.test.TestCase):
         self.assertListEqual(expected_labels_top, label_vocab.most_common(15))
 
     def test_ngram_cbowpos(self):
-        h_params = build_hparams({
-            'input_unit': 'ngram',
-            'vect_model': 'cbowpos',
-            'model_head': 'asm',
+        config = build_config({
+            'input_unit': InputUnit.NGRAM,
+            'vect_model': VectModel.CBOWPOS,
+            'model_head': ModelHead.ADAPTIVE,
             'bucket_cbow': False
         })
 
-        unit_vocab, label_vocab = extract_vocab(self.data_dir, h_params)
+        unit_vocab, label_vocab = extract_vocab(self.data_dir, config)
 
         expected_units_top = [
             ('[BOS]', 51), ('[EOS]', 51), ('<по', 16), ('ть>', 15), ('<на', 12), ('нов', 11), ('<пр', 11), ('ерр', 9),
@@ -79,14 +79,14 @@ class TestExtractVocab(tf.test.TestCase):
         self.assertListEqual(expected_labels_top, label_vocab.most_common(15))
 
     def test_bpe_skipgram(self):
-        h_params = build_hparams({
-            'input_unit': 'bpe',
+        config = build_config({
+            'input_unit': InputUnit.BPE,
             'bpe_size': 50,
             'bpe_chars': 10,
-            'vect_model': 'skipgram',
-            'model_head': 'sm'
+            'vect_model': VectModel.SKIPGRAM,
+            'model_head': ModelHead.SOFTMAX
         })
-        unit_vocab, label_vocab = extract_vocab(self.data_dir, h_params)
+        unit_vocab, label_vocab = extract_vocab(self.data_dir, config)
 
         expected_units_top = [
             ('##[UNK]', 451), ('##а', 153), ('##о', 135), ('[UNK]', 133), ('##и', 124), ('##е', 118), ('##р', 103),
@@ -101,13 +101,13 @@ class TestExtractVocab(tf.test.TestCase):
         self.assertListEqual(expected_labels_top, label_vocab.most_common(15))
 
     def test_cnn_cbow(self):
-        h_params = build_hparams({
-            'input_unit': 'cnn',
-            'vect_model': 'cbow',
-            'model_head': 'sm',
+        config = build_config({
+            'input_unit': InputUnit.CNN,
+            'vect_model': VectModel.CBOW,
+            'model_head': ModelHead.SOFTMAX,
             'bucket_cbow': False
         })
-        unit_vocab, label_vocab = extract_vocab(self.data_dir, h_params)
+        unit_vocab, label_vocab = extract_vocab(self.data_dir, config)
 
         expected_units_top = [
             ('[BOW]', 364), ('[EOW]', 364), ('а', 162), ('о', 159), ('и', 136), ('е', 130), ('р', 112), ('т', 105),

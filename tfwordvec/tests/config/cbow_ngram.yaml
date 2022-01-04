@@ -1,0 +1,13 @@
+input_unit: NGRAM
+unit_freq: 2
+label_freq: 3
+ngram_comb: SUM
+vect_model: CBOW
+embed_type: ADAPTIVE
+aembd_cutoff:
+- 2
+- 4
+window_size: 5
+samp_thold: 1e-1
+model_head: SAMPLED
+num_epochs: 1
