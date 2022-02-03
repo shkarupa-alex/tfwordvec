@@ -2,8 +2,6 @@ import argparse
 import logging
 import os
 import tensorflow as tf
-from gensim.models.keyedvectors import Vocab
-from gensim.models.utils_any2vec import _save_word2vec_format
 from nlpvocab import Vocabulary
 from tensorflow_hub import KerasLayer
 from .config import build_config
@@ -19,9 +17,16 @@ def export_vectors(vocab_path, params_path, model_path):
     units = RESERVED + [u for u in unit_top.tokens() if u not in RESERVED]
     embed = KerasLayer(os.path.join(model_path, 'unit_encoder'))
     vectors = embed(units).numpy()
-    vocab = {u: Vocab(index=i, count=len(units) - i) for i, u in enumerate(units)}
 
-    _save_word2vec_format(os.path.join(model_path, 'unit_encoder.bin'), vocab, vectors, binary=True)
+    with open(os.path.join(model_path, 'unit_encoder.bin'), 'wb') as fout:
+        fout.write(f'{vectors.shape[0]} {vectors.shape[1]}\n'.encode('utf-8'))
+
+        # store in sorted order: most frequent words at the top
+        for idx in range(len(units)):
+            word = units[idx]
+            vector = vectors[idx].astype('float32')
+            fout.write(f'{word} '.encode('utf-8') + vector.tobytes())
+
     tf.get_logger().info('Unit vectors saved to {}'.format(os.path.join(model_path, 'unit_encoder.bin')))
 
 

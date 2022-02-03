@@ -9,7 +9,7 @@ from ..hub import export_encoder
 from ..export import export_vectors
 
 
-class TestExportEncoders(tf.test.TestCase):
+class TestExportVectors(tf.test.TestCase):
     def setUp(self):
         super().setUp()
         np.random.seed(1)

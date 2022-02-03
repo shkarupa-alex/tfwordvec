@@ -1,6 +1,8 @@
 import argparse
 import logging
 import os
+
+import keras.optimizers
 import tensorflow as tf
 from nlpvocab import Vocabulary
 from keras import backend, callbacks, optimizers, models
