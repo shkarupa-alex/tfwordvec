@@ -24,7 +24,8 @@ class TestTrainDataset(tf.test.TestCase):
             'input_unit': InputUnit.CHAR,
             'vect_model': VectModel.SKIPGRAM,
             'model_head': ModelHead.SOFTMAX,
-            'batch_size': 8
+            'batch_size': 8,
+            'samp_thold': 1e-1
         })
         dataset = train_dataset(self.data_dir, config, self.char_vocab)
 
@@ -49,6 +50,7 @@ class TestTrainDataset(tf.test.TestCase):
             'vect_model': VectModel.CBOW,
             'model_head': ModelHead.SAMPLED,
             'batch_size': 6,
+            'samp_thold': 1e-1,
             'bucket_cbow': False
         })
         dataset = train_dataset(self.data_dir, config, self.char_vocab)
@@ -71,6 +73,7 @@ class TestTrainDataset(tf.test.TestCase):
             'vect_model': VectModel.CBOWPOS,
             'model_head': ModelHead.NCE,
             'batch_size': 10,
+            'samp_thold': 1e-1,
             'bucket_cbow': False
         })
         dataset = train_dataset(self.data_dir, config, self.char_vocab)
@@ -96,7 +99,8 @@ class TestTrainDataset(tf.test.TestCase):
             'input_unit': InputUnit.WORD,
             'vect_model': VectModel.SKIPGRAM,
             'model_head': ModelHead.ADAPTIVE,
-            'batch_size': 4
+            'batch_size': 4,
+            'samp_thold': 1e-1
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
@@ -117,7 +121,8 @@ class TestTrainDataset(tf.test.TestCase):
             'input_unit': InputUnit.WORD,
             'vect_model': VectModel.CBOW,
             'model_head': ModelHead.SOFTMAX,
-            'batch_size': 6,
+            'batch_size': 4,
+            'samp_thold': 1e-1,
             'bucket_cbow': False
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
@@ -143,6 +148,7 @@ class TestTrainDataset(tf.test.TestCase):
             'vect_model': VectModel.CBOWPOS,
             'model_head': ModelHead.SAMPLED,
             'batch_size': 4,
+            'samp_thold': 1e-1,
             'bucket_cbow': False
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
@@ -168,7 +174,8 @@ class TestTrainDataset(tf.test.TestCase):
             'input_unit': InputUnit.NGRAM,
             'vect_model': VectModel.SKIPGRAM,
             'model_head': ModelHead.NCE,
-            'batch_size': 8
+            'batch_size': 8,
+            'samp_thold': 1e-1
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
@@ -190,6 +197,7 @@ class TestTrainDataset(tf.test.TestCase):
             'vect_model': VectModel.CBOW,
             'model_head': ModelHead.ADAPTIVE,
             'batch_size': 2,
+            'samp_thold': 1e-1,
             'bucket_cbow': False
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
@@ -212,6 +220,7 @@ class TestTrainDataset(tf.test.TestCase):
             'vect_model': VectModel.CBOWPOS,
             'model_head': ModelHead.SOFTMAX,
             'batch_size': 2,
+            'samp_thold': 1e-1,
             'bucket_cbow': False
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
@@ -240,7 +249,8 @@ class TestTrainDataset(tf.test.TestCase):
             'input_unit': InputUnit.BPE,
             'vect_model': VectModel.SKIPGRAM,
             'model_head': ModelHead.NCE,
-            'batch_size': 8
+            'batch_size': 8,
+            'samp_thold': 1e-1
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
@@ -262,6 +272,7 @@ class TestTrainDataset(tf.test.TestCase):
             'vect_model': VectModel.CBOW,
             'model_head': ModelHead.ADAPTIVE,
             'batch_size': 2,
+            'samp_thold': 1e-1,
             'bucket_cbow': False
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
@@ -284,6 +295,7 @@ class TestTrainDataset(tf.test.TestCase):
             'vect_model': VectModel.CBOWPOS,
             'model_head': ModelHead.SOFTMAX,
             'batch_size': 2,
+            'samp_thold': 1e-1,
             'bucket_cbow': False
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
@@ -312,7 +324,8 @@ class TestTrainDataset(tf.test.TestCase):
             'input_unit': InputUnit.CNN,
             'vect_model': VectModel.SKIPGRAM,
             'model_head': ModelHead.NCE,
-            'batch_size': 8
+            'batch_size': 8,
+            'samp_thold': 1e-1
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
 
@@ -334,6 +347,7 @@ class TestTrainDataset(tf.test.TestCase):
             'vect_model': VectModel.CBOW,
             'model_head': ModelHead.ADAPTIVE,
             'batch_size': 2,
+            'samp_thold': 1e-1,
             'bucket_cbow': False
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
@@ -356,6 +370,7 @@ class TestTrainDataset(tf.test.TestCase):
             'vect_model': VectModel.CBOWPOS,
             'model_head': ModelHead.SOFTMAX,
             'batch_size': 2,
+            'samp_thold': 1e-1,
             'bucket_cbow': False
         })
         dataset = train_dataset(self.data_dir, config, self.word_vocab)
