@@ -27,7 +27,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_char_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_char.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_skipgram_char_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -35,7 +35,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_word_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_word.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_skipgram_word_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -43,7 +43,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_ngram_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_ngram.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_skipgram_ngram_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -51,7 +51,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_bpe_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_bpe.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_skipgram_bpe_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -59,7 +59,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_cnn_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_cnn.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_skipgram_cnn_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -67,7 +67,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_char_cbow(self):
         params_path = os.path.join(self.params_dir, 'cbow_char.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_cbow_char_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -75,7 +75,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_word_cbow(self):
         params_path = os.path.join(self.params_dir, 'cbow_word.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_cbow_word_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -83,7 +83,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_ngram_cbow(self):
         params_path = os.path.join(self.params_dir, 'cbow_ngram.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_cbow_ngram_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -91,7 +91,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_bpe_cbow(self):
         params_path = os.path.join(self.params_dir, 'cbow_bpe.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_cbow_bpe_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -99,7 +99,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_cnn_cbow(self):
         params_path = os.path.join(self.params_dir, 'cbow_cnn.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_cbow_cnn_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -107,7 +107,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_char_cbowpos(self):
         params_path = os.path.join(self.params_dir, 'cbowpos_char.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_cbow_char_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -115,7 +115,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_word_cbowpos(self):
         params_path = os.path.join(self.params_dir, 'cbowpos_word.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_cbow_word_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -123,7 +123,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_ngram_cbowpos(self):
         params_path = os.path.join(self.params_dir, 'cbowpos_ngram.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_cbow_ngram_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -131,7 +131,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_bpe_cbowpos(self):
         params_path = os.path.join(self.params_dir, 'cbowpos_bpe.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_cbow_bpe_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))
@@ -139,7 +139,7 @@ class TestExportVectors(tf.test.TestCase):
     def test_cnn_cbowpos(self):
         params_path = os.path.join(self.params_dir, 'cbowpos_cnn.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         vocab_path = os.path.join(self.data_dir, 'vocab_cbow_cnn_label.pkl')
         export_vectors(vocab_path, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder.bin')))

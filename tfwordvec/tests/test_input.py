@@ -27,7 +27,7 @@ class TestTrainDataset(tf.test.TestCase):
             'batch_size': 8,
             'samp_thold': 1e-1
         })
-        dataset = train_dataset(self.data_dir, config, self.char_vocab)
+        dataset = train_dataset(self.data_dir, config, self.char_vocab, self.char_vocab)
 
         for row in dataset.take(1):
             self.assertLen(row, 2)
@@ -38,7 +38,7 @@ class TestTrainDataset(tf.test.TestCase):
 
             self.assertTrue(tf.is_tensor(features['units']))
             self.assertListEqual(features['units'].shape.as_list(), [8])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(labels))
             self.assertListEqual(labels.shape.as_list(), [8])
@@ -53,7 +53,7 @@ class TestTrainDataset(tf.test.TestCase):
             'samp_thold': 1e-1,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, config, self.char_vocab)
+        dataset = train_dataset(self.data_dir, config, self.char_vocab, self.char_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -61,7 +61,7 @@ class TestTrainDataset(tf.test.TestCase):
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
             self.assertListEqual(features['units'].shape.as_list(), [6, None])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [6])
@@ -76,7 +76,7 @@ class TestTrainDataset(tf.test.TestCase):
             'samp_thold': 1e-1,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, config, self.char_vocab)
+        dataset = train_dataset(self.data_dir, config, self.char_vocab, self.char_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -84,7 +84,7 @@ class TestTrainDataset(tf.test.TestCase):
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
             self.assertListEqual(features['units'].shape.as_list(), [10, None])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [10])
@@ -102,7 +102,7 @@ class TestTrainDataset(tf.test.TestCase):
             'batch_size': 4,
             'samp_thold': 1e-1
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -110,7 +110,7 @@ class TestTrainDataset(tf.test.TestCase):
 
             self.assertTrue(tf.is_tensor(features['units']))
             self.assertListEqual(features['units'].shape.as_list(), [4])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [4])
@@ -125,7 +125,7 @@ class TestTrainDataset(tf.test.TestCase):
             'samp_thold': 1e-1,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for row in dataset.take(1):
             self.assertLen(row, 2)
@@ -136,7 +136,7 @@ class TestTrainDataset(tf.test.TestCase):
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
             self.assertListEqual(features['units'].shape.as_list(), [4, None])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(labels))
             self.assertListEqual(labels.shape.as_list(), [4])
@@ -151,7 +151,7 @@ class TestTrainDataset(tf.test.TestCase):
             'samp_thold': 1e-1,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
@@ -159,7 +159,7 @@ class TestTrainDataset(tf.test.TestCase):
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
             self.assertListEqual(features['units'].shape.as_list(), [4, None])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [4])
@@ -177,15 +177,15 @@ class TestTrainDataset(tf.test.TestCase):
             'batch_size': 8,
             'samp_thold': 1e-1
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
             self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
-            self.assertIsInstance(features['units'], tf.Tensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [8])
@@ -200,15 +200,15 @@ class TestTrainDataset(tf.test.TestCase):
             'samp_thold': 1e-1,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
             self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [2, None])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertListEqual(features['units'].shape.as_list(), [2, None, None])
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [2])
@@ -223,7 +223,7 @@ class TestTrainDataset(tf.test.TestCase):
             'samp_thold': 1e-1,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for row in dataset.take(1):
             self.assertLen(row, 2)
@@ -233,8 +233,8 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(sorted(features.keys()), ['positions', 'units'])
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [2, None])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertListEqual(features['units'].shape.as_list(), [2, None, None])
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertIsInstance(features['positions'], tf.RaggedTensor)
             self.assertListEqual(features['positions'].shape.as_list(), [2, None])
@@ -252,15 +252,15 @@ class TestTrainDataset(tf.test.TestCase):
             'batch_size': 8,
             'samp_thold': 1e-1
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
             self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
-            self.assertIsInstance(features['units'], tf.Tensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [8])
@@ -275,15 +275,15 @@ class TestTrainDataset(tf.test.TestCase):
             'samp_thold': 1e-1,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
             self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [2, None])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertListEqual(features['units'].shape.as_list(), [2, None, None])
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [2])
@@ -298,7 +298,7 @@ class TestTrainDataset(tf.test.TestCase):
             'samp_thold': 1e-1,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for row in dataset.take(1):
             self.assertLen(row, 2)
@@ -308,8 +308,8 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(sorted(features.keys()), ['positions', 'units'])
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [2, None])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertListEqual(features['units'].shape.as_list(), [2, None, None])
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertIsInstance(features['positions'], tf.RaggedTensor)
             self.assertListEqual(features['positions'].shape.as_list(), [2, None])
@@ -327,15 +327,15 @@ class TestTrainDataset(tf.test.TestCase):
             'batch_size': 8,
             'samp_thold': 1e-1
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
             self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
-            self.assertIsInstance(features['units'], tf.Tensor)
-            self.assertListEqual(features['units'].shape.as_list(), [8])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertIsInstance(features['units'], tf.RaggedTensor)
+            self.assertListEqual(features['units'].shape.as_list(), [8, None])
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [8])
@@ -350,15 +350,15 @@ class TestTrainDataset(tf.test.TestCase):
             'samp_thold': 1e-1,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for features in dataset.take(1):
             self.assertIsInstance(features, dict)
             self.assertEqual(sorted(features.keys()), ['labels', 'units'])
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [2, None])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertListEqual(features['units'].shape.as_list(), [2, None, None])
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertTrue(tf.is_tensor(features['labels']))
             self.assertListEqual(features['labels'].shape.as_list(), [2])
@@ -373,7 +373,7 @@ class TestTrainDataset(tf.test.TestCase):
             'samp_thold': 1e-1,
             'bucket_cbow': False
         })
-        dataset = train_dataset(self.data_dir, config, self.word_vocab)
+        dataset = train_dataset(self.data_dir, config, self.word_vocab, self.word_vocab)
 
         for row in dataset.take(1):
             self.assertLen(row, 2)
@@ -383,8 +383,8 @@ class TestTrainDataset(tf.test.TestCase):
             self.assertEqual(sorted(features.keys()), ['positions', 'units'])
 
             self.assertIsInstance(features['units'], tf.RaggedTensor)
-            self.assertListEqual(features['units'].shape.as_list(), [2, None])
-            self.assertEqual(features['units'].dtype, tf.string)
+            self.assertListEqual(features['units'].shape.as_list(), [2, None, None])
+            self.assertEqual(features['units'].dtype, tf.int64)
 
             self.assertIsInstance(features['positions'], tf.RaggedTensor)
             self.assertListEqual(features['positions'].shape.as_list(), [2, None])

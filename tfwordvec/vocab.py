@@ -3,9 +3,9 @@ import logging
 import os
 import tensorflow as tf
 from nlpvocab import Vocabulary
-from .input import RESERVED, vocab_dataset
+from .input import vocab_dataset
 from .model import _unit_embedder
-from .config import VectModel, build_config
+from .config import RESERVED, VectModel, build_config
 
 
 def extract_vocab(data_path, config):
@@ -17,7 +17,7 @@ def extract_vocab(data_path, config):
     label_vocab = Vocabulary({w.decode('utf-8'): f for w, f in label_vocab.most_common()})
     assert 0 == label_vocab[''], 'Empty label occured'
 
-    embedder = _unit_embedder(config, RESERVED)
+    embedder = _unit_embedder(config, RESERVED, with_prep=False)
     unit_vocab = embedder.vocab(label_vocab)
 
     return unit_vocab, label_vocab

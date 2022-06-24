@@ -28,7 +28,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_char_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_char.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
@@ -38,15 +38,15 @@ class TestExportEncoders(tf.test.TestCase):
     def test_word_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_word.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
         infered = embed(['Время'])[0]
 
-        model = models.load_model(os.path.join(self.model_dir, 'train'))
-        embedding = model.get_layer('context_encoder').get_layer('unit_encoding') \
-            .layer.get_layer('unit_embedding').embed
+        model = models.load_model(os.path.join(self.model_dir, 'last'))
+        embedding = model.get_layer('context_encoder').get_layer('unit_encoder') \
+            .get_layer('unit_embedding').embed
         actual = embedding(tf.constant([6], dtype=tf.int32))[0]
 
         self.assertAllEqual(actual, infered)
@@ -54,7 +54,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_ngram_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_ngram.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
@@ -64,7 +64,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_bpe_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_bpe.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
@@ -74,7 +74,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_cnn_skipgram(self):
         params_path = os.path.join(self.params_dir, 'skipgram_cnn.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
 
         embed = KerasLayer(os.path.join(self.model_dir, 'unit_encoder'))
@@ -84,7 +84,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_char_cbow(self):
         params_path = os.path.join(self.params_dir, 'cbow_char.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
@@ -99,7 +99,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_word_cbow(self):
         params_path = os.path.join(self.params_dir, 'cbow_word.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
@@ -114,7 +114,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_ngram_cbow(self):
         params_path = os.path.join(self.params_dir, 'cbow_ngram.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
@@ -129,7 +129,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_bpe_cbow(self):
         params_path = os.path.join(self.params_dir, 'cbow_bpe.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
@@ -144,7 +144,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_cnn_cbow(self):
         params_path = os.path.join(self.params_dir, 'cbow_cnn.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
@@ -159,7 +159,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_char_cbowpos(self):
         params_path = os.path.join(self.params_dir, 'cbowpos_char.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
@@ -174,7 +174,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_word_cbowpos(self):
         params_path = os.path.join(self.params_dir, 'cbowpos_word.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
@@ -189,7 +189,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_ngram_cbowpos(self):
         params_path = os.path.join(self.params_dir, 'cbowpos_ngram.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
@@ -204,7 +204,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_bpe_cbowpos(self):
         params_path = os.path.join(self.params_dir, 'cbowpos_bpe.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 
@@ -219,7 +219,7 @@ class TestExportEncoders(tf.test.TestCase):
     def test_cnn_cbowpos(self):
         params_path = os.path.join(self.params_dir, 'cbowpos_cnn.yaml')
         train_model(self.data_dir, params_path, self.model_dir)
-        export_encoder(params_path, self.model_dir)
+        export_encoder(self.data_dir, params_path, self.model_dir)
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'unit_encoder', 'saved_model.pb')))
         self.assertTrue(os.path.isfile(os.path.join(self.model_dir, 'context_encoder', 'saved_model.pb')))
 

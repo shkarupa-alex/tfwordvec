@@ -1,11 +1,11 @@
 import argparse
 import logging
+import math
 import os
 import tensorflow as tf
 from nlpvocab import Vocabulary
 from tensorflow_hub import KerasLayer
-from .config import build_config
-from .input import RESERVED
+from .config import RESERVED, build_config
 
 
 def export_vectors(vocab_path, params_path, model_path):
@@ -16,16 +16,21 @@ def export_vectors(vocab_path, params_path, model_path):
 
     units = RESERVED + [u for u in unit_top.tokens() if u not in RESERVED]
     embed = KerasLayer(os.path.join(model_path, 'unit_encoder'))
-    vectors = embed(units).numpy()
+    vectors = embed(units[:1]).numpy()
 
     with open(os.path.join(model_path, 'unit_encoder.bin'), 'wb') as fout:
-        fout.write(f'{vectors.shape[0]} {vectors.shape[1]}\n'.encode('utf-8'))
+        fout.write(f'{len(units)} {vectors.shape[1]}\n'.encode('utf-8'))
 
-        # store in sorted order: most frequent words at the top
-        for idx in range(len(units)):
-            word = units[idx]
-            vector = vectors[idx].astype('float32')
-            fout.write(f'{word} '.encode('utf-8') + vector.tobytes())
+        step = 1000
+        for i in range(math.ceil(len(units) / step)):
+            _units = units[i * step:(i + 1) * step]
+            _vectors = embed(_units).numpy()
+
+            # store in sorted order: most frequent words at the top
+            for j in range(len(_units)):
+                word = _units[j]
+                vector = _vectors[j].astype('float32')
+                fout.write(f'{word} '.encode('utf-8') + vector.tobytes())
 
     tf.get_logger().info('Unit vectors saved to {}'.format(os.path.join(model_path, 'unit_encoder.bin')))
 

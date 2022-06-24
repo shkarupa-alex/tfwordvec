@@ -2,10 +2,9 @@ import argparse
 import logging
 import os
 
-import keras.optimizers
 import tensorflow as tf
 from nlpvocab import Vocabulary
-from keras import backend, callbacks, optimizers, models
+from keras import backend, callbacks, optimizers
 from keras.mixed_precision import policy as mixed_precision
 from tensorflow_addons.optimizers import Lookahead, RectifiedAdam
 from tfmiss.keras.callbacks import LRFinder
@@ -35,11 +34,7 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
                 os.path.join(model_path, 'logs'),
                 update_freq=1000,
                 profile_batch='140, 160'),
-            callbacks.ModelCheckpoint(
-                os.path.join(model_path, 'train'),
-                monitor='loss',
-                verbose=True,
-                options=tf.saved_model.SaveOptions(namespace_whitelist=['Addons', 'Miss']))
+            callbacks.BackupAndRestore(os.path.join(model_path, 'train'))
         ]
 
     if 'ranger' == config.train_optim.lower():
@@ -51,19 +46,13 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     unit_path, label_path = _vocab_names(data_path, config)
     unit_vocab = Vocabulary.load(unit_path)
     label_vocab = Vocabulary.load(label_path)
-    dataset = train_dataset(data_path, config, label_vocab)
+    dataset = train_dataset(data_path, config, unit_vocab, label_vocab)
 
-    if os.path.isdir(os.path.join(model_path, 'train')):
-        tf.get_logger().info('Previous training found. Loading pretrained model.')
-        model = models.load_model(os.path.join(model_path, 'train'))  # TODO: check
-    else:
-        tf.get_logger().info('No previous training found. Creating model from scratch.')
-        model = build_model(config, unit_vocab, label_vocab)
-        model.compile(
-            optimizer=optimizer,
-            loss='sparse_categorical_crossentropy' if ModelHead.SOFTMAX == config.model_head else None
-        )
-
+    model = build_model(config, unit_vocab, label_vocab)
+    model.compile(
+        optimizer=optimizer,
+        loss='sparse_categorical_crossentropy' if ModelHead.SOFTMAX == config.model_head else None
+    )
     model.summary()
     model.fit(
         dataset,
@@ -71,6 +60,7 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
         callbacks=call_backs,
         steps_per_epoch=findlr_steps if findlr_steps > 0 else None
     )
+    model.save(os.path.join(model_path, 'last'))
 
     if findlr_steps > 0:
         best_lr, _ = lr_finder.plot()
