@@ -1,8 +1,7 @@
-tensorflow>=2.7.0
-tensorflow-addons>=0.15.0
+tensorflow>=2.9.1
+tensorflow-addons>=0.17.0
 tensorflow-hub>=0.12.0
-keras>=2.7.0
-tfmiss>=0.15.4
+keras>=2.9.0
+tfmiss>=0.17.3
 nlpvocab>=1.2.0
-gensim>=3.8.1
 omegaconf>=2.1.1

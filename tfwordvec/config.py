@@ -6,6 +6,11 @@ from omegaconf import OmegaConf
 from typing import Optional, List
 from tensorflow_addons import optimizers as add_opt  # Required to initialize custom optimizers
 
+UNK_MARK = '[UNK]'
+BOS_MARK = '[BOS]'
+EOS_MARK = '[EOS]'
+RESERVED = [UNK_MARK, BOS_MARK, EOS_MARK]
+
 
 class InputUnit(Enum):
     CHAR = 'char'
@@ -20,7 +25,7 @@ class NgramSelf(Enum):
     ALONE = 'alone'
 
 
-class NgramComb(Enum):
+class SubwordComb(Enum):
     MIN = 'min'
     MAX = 'max'
     MEAN = 'mean'
@@ -60,10 +65,11 @@ class Config:
     ngram_minn: Optional[int] = 3
     ngram_maxn: Optional[int] = 5
     ngram_self: Optional[NgramSelf] = NgramSelf.ALWAYS
-    ngram_comb: Optional[NgramComb] = NgramComb.MEAN
 
     bpe_size: Optional[int] = 32000
     bpe_chars: Optional[int] = 1000
+
+    subword_comb: Optional[SubwordComb] = SubwordComb.MEAN
 
     cnn_filt: Optional[List[int]] = (32, 32, 64, 128, 256, 512, 1024)
     cnn_kern: Optional[List[int]] = (1, 2, 3, 4, 5, 6, 7)
@@ -152,5 +158,7 @@ def build_config(custom):
     assert 'ranger' == conf.train_optim.lower() or core_opt.get(conf.train_optim), \
         'Unsupported train optimizer'
     assert 0. < conf.learn_rate, 'Bad learning rate'
+
+    # TODO: dense_cpu if ss or nce
 
     return conf

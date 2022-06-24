@@ -4,15 +4,12 @@ from nlpvocab import Vocabulary
 from tfmiss.preprocessing import skip_gram, cont_bow, down_sample
 from tfmiss.text import normalize_unicode, zero_digits, split_chars, lower_case
 from tfmiss.training import estimate_bucket_pipeline
-from .config import InputUnit, VectModel, ModelHead
-
-UNK_MARK = '[UNK]'
-BOS_MARK = '[BOS]'
-EOS_MARK = '[EOS]'
-RESERVED = [UNK_MARK, BOS_MARK, EOS_MARK]
+from .config import BOS_MARK, EOS_MARK, UNK_MARK, InputUnit, VectModel, ModelHead
+from .model import _unit_embedder
 
 
-def train_dataset(src_path, config, label_vocab):
+def train_dataset(src_path, config, unit_vocab, label_vocab):
+    unit_embedder = _unit_embedder(config, unit_vocab, with_prep=False)
     label_table, label_last = _label_lookup(label_vocab, config)
 
     def _pre_transform(sentences):
@@ -32,6 +29,8 @@ def train_dataset(src_path, config, label_vocab):
     def _post_transform(features, labels):
         features.pop('filters', None)
         features.pop('lengths', None)
+
+        features['units'] = unit_embedder.preprocess(features['units'])
 
         if ModelHead.SOFTMAX == config.model_head:
             return features, labels
@@ -131,7 +130,7 @@ def _transform_model(units, config):
         targets, contexts, positions = cont_bow(units, config.window_size)
 
         if config.bucket_cbow:
-            features['lengths'] = tf.cast(contexts.row_lengths(), tf.int32)
+            features['lengths'] = tf.cast(contexts.row_lengths(), 'int32')
 
         if VectModel.CBOWPOS == config.vect_model:
             positions = tf.ragged.map_flat_values(
@@ -155,9 +154,9 @@ def _label_lookup(label_vocab, config):
 
     top, _ = label_vocab.split_by_frequency(config.label_freq)
     keys = top.tokens() + [UNK_MARK]
-    values = tf.range(len(keys), dtype=tf.int64)
+    values = tf.range(len(keys), dtype='int64')
     last = len(keys) - 1
     table = tf.lookup.StaticHashTable(tf.lookup.KeyValueTensorInitializer(
-        keys=keys, values=values, key_dtype=tf.string), last)
+        keys=keys, values=values, key_dtype='string'), last)
 
     return table, last

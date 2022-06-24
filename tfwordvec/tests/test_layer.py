@@ -1,10 +1,12 @@
 import tensorflow as tf
-from keras import layers, keras_parameterized, testing_utils
+from keras import layers
+from keras.testing_infra import test_combinations
+
 from ..layer import CbowContext
 
 
-@keras_parameterized.run_all_keras_modes
-class CbowContextTest(keras_parameterized.TestCase):
+@test_combinations.run_all_keras_modes
+class CbowContextTest(test_combinations.TestCase):
     # def test_layer(self):
     #     output_data = testing_utils.layer_test(
     #         CbowContext,
