@@ -6,7 +6,7 @@ label_freq: 40
 ngram_minn: 3
 ngram_maxn: 5
 ngram_self: ALWAYS
-ngram_comb: MEAN
+subword_comb: MEAN
 vect_model: CBOW
 window_size: 5
 samp_thold: 0.001

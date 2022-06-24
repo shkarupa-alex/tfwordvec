@@ -11,7 +11,7 @@ embed_type: DENSE_CPU
 model_head: NCE
 neg_samples: 5
 batch_size: 1024
-num_epochs: 5
+num_epochs: 2
 mixed_fp16: false
 use_jit: true
 train_optim: Adam

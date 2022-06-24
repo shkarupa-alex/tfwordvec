@@ -1,4 +1,5 @@
 import os
+import tensorflow as tf
 from dataclasses import dataclass
 from enum import Enum
 from keras import optimizers as core_opt
@@ -159,6 +160,8 @@ def build_config(custom):
         'Unsupported train optimizer'
     assert 0. < conf.learn_rate, 'Bad learning rate'
 
-    # TODO: dense_cpu if ss or nce
+    if conf.model_head in {ModelHead.SAMPLED, ModelHead.NCE} and EmbedType.DENSE_CPU != conf.embed_type:
+        tf.get_logger().warning('Embedding type "dense_cpu" is recommended when using '
+                                '"sampled_softmax" or "noise_contrastive" model head')
 
     return conf

@@ -2,9 +2,8 @@ import tensorflow as tf
 from keras import layers
 from keras.utils.generic_utils import register_keras_serializable
 from keras.utils.tf_utils import shape_type_conversion
-from tfmiss.text import normalize_unicode, lower_case, zero_digits
-from tfmiss.preprocessing import cbow_context
 from .input import BOS_MARK, EOS_MARK, UNK_MARK
+from .ops import cbow_context
 
 
 @register_keras_serializable(package='WordVec')

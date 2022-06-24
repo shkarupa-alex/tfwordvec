@@ -1,8 +1,7 @@
 import os
 import tensorflow as tf
 from nlpvocab import Vocabulary
-from tfmiss.preprocessing import skip_gram, cont_bow, down_sample
-from tfmiss.text import normalize_unicode, zero_digits, split_chars, lower_case
+from .ops import skip_gram, cont_bow, down_sample, normalize_unicode, zero_digits, split_chars, lower_case
 from tfmiss.training import estimate_bucket_pipeline
 from .config import BOS_MARK, EOS_MARK, UNK_MARK, InputUnit, VectModel, ModelHead
 from .model import _unit_embedder
