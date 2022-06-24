@@ -109,4 +109,4 @@ datasets/*
 *.swp
 .vscode/
 *.whl
-model/
+models/

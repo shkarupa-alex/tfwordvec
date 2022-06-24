@@ -6,6 +6,7 @@ import tensorflow as tf
 from nlpvocab import Vocabulary
 from tensorflow_hub import KerasLayer
 from .config import RESERVED, build_config
+from .ops import *  # load custom ops
 
 
 def export_vectors(vocab_path, params_path, model_path):
@@ -44,11 +45,11 @@ def main():
     parser.add_argument(
         'model_path',
         type=str,
-        help='Path to save model')
+        help='Path to saved model')
     parser.add_argument(
         'vocab_path',
         type=argparse.FileType('rb'),
-        help='Path to vocabulary')
+        help='Path to words vocabulary')
 
     argv, _ = parser.parse_known_args()
     assert os.path.exists(argv.model_path) and os.path.isdir(argv.model_path), 'Wrong model path'
