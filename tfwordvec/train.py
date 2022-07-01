@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-
+import shutil
 import tensorflow as tf
 from nlpvocab import Vocabulary
 from keras import backend, callbacks, optimizers
@@ -15,6 +15,10 @@ from .vocab import _vocab_names
 
 
 def train_model(data_path, params_path, model_path, findlr_steps=0):
+    backup_path = os.path.join(model_path, 'train')
+    weights_path = os.path.join(model_path, 'weights')
+    export_path = os.path.join(model_path, 'last')
+
     config = build_config(params_path)
 
     if config.use_jit:
@@ -34,7 +38,7 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
                 os.path.join(model_path, 'logs'),
                 update_freq=1000,
                 profile_batch='140, 160'),
-            callbacks.BackupAndRestore(os.path.join(model_path, 'train'))
+            callbacks.BackupAndRestore(backup_path)
         ]
 
     if 'ranger' == config.train_optim.lower():
@@ -49,22 +53,29 @@ def train_model(data_path, params_path, model_path, findlr_steps=0):
     dataset = train_dataset(data_path, config, unit_vocab, label_vocab)
 
     model = build_model(config, unit_vocab, label_vocab)
+    if not os.path.exists(backup_path) and os.path.exists(f'{weights_path}.index'):
+        model.load_weights(weights_path)
+
     model.compile(
         optimizer=optimizer,
-        loss='sparse_categorical_crossentropy' if ModelHead.SOFTMAX == config.model_head else None
-    )
+        loss='sparse_categorical_crossentropy' if ModelHead.SOFTMAX == config.model_head else None)
     model.summary()
+
     model.fit(
         dataset,
         epochs=1 if findlr_steps > 0 else config.num_epochs,
         callbacks=call_backs,
         steps_per_epoch=findlr_steps if findlr_steps > 0 else None
     )
-    model.save(os.path.join(model_path, 'last'))
 
     if findlr_steps > 0:
         best_lr, _ = lr_finder.plot()
         tf.get_logger().info('Best lr should be near: {}'.format(best_lr))
+    else:
+        model.save(export_path)
+        shutil.rmtree(backup_path)
+
+        model.save_weights(os.path.join(model_path, 'weights'))
 
 
 def main():
