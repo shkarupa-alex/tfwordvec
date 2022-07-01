@@ -14,7 +14,7 @@ if [[ ! -d "${TREEBANKS_NAME}" ]]; then
 fi;
 
 
-DATASET_DIR="ud_ml_word"
+DATASET_DIR="ud_ml_char"
 rm -rf "${DATASET_DIR}"
 mkdir "${DATASET_DIR}"
 (
@@ -26,7 +26,7 @@ mkdir "${DATASET_DIR}"
 
       for FILE in "${DIR}"/*.conllu ; do
         # cat ${FILE} | grep -v "^#" | cut -f2 | perl -CSD -Mutf8 -0 -pe 's/(.)\r?\n/$1 /g' >> ../${DATASET_DIR}/${DIR}.txt
-        grep -E "^$|\t(ADJ|ADV|NOUN|PROPN|VERB)\t" "${FILE}" | grep -v "^#" | cut -f2 | perl -CSD -Mutf8 -0 -pe 's/(.)\r?\n/$1 /g' >> "../${DATASET_DIR}/${DIR}.txt"
+        grep -E "^# text = " "${FILE}" | sed 's/# text = //g' | sed 's/``/〝/g' | sed 's/&#39;&#39;/〞/g' >> "../${DATASET_DIR}/${DIR}.txt"
       done
 
       # Checking for no-space languages
